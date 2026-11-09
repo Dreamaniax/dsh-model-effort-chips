@@ -163,6 +163,25 @@ check(colorAt(3, 4) === 'rgb(232, 121, 249)', 'last level is magenta')
 check(colorAt(0, 1) === 'rgb(34, 197, 94)', 'a single level stays green')
 check(/^rgb\(/.test(colorAt(1, 4)), 'intermediate levels interpolate')
 
+// --- drag snapping + energy (M4 / M3.5) -------------------------------------
+
+const { nearestIndex, energyFor, wavePoints } = module.__internals
+check(nearestIndex(0, 4) === 0, 'drag at the left edge snaps to the first level')
+check(nearestIndex(1, 4) === 3, 'drag at the right edge snaps to the last level')
+check(nearestIndex(0.51, 4) === 2, 'drag just past half snaps to the third level')
+check(nearestIndex(0.5, 1) === 0, 'a single level snaps to itself')
+check(nearestIndex(-3, 4) === 0 && nearestIndex(9, 4) === 3, 'out-of-range drag is clamped')
+check(energyFor(0, 4) === 0 && energyFor(3, 4) === 1, 'energy runs 0..1 across the levels')
+check(energyFor(0, 1) === 1, 'a single level is full energy')
+
+const amplitude = (points) => {
+  const ys = points.split(' ').map((pair) => Number(pair.split(',')[1]))
+  const mid = 13
+  return Math.max(...ys.map((y) => Math.abs(y - mid)))
+}
+check(amplitude(wavePoints(1)) > amplitude(wavePoints(0)), 'higher energy grows the wave amplitude')
+check(wavePoints(0.5).split(' ').length === 51, 'wave samples the full width')
+
 // --- rendering --------------------------------------------------------------
 
 const flatten = (children) => children.flat(Infinity).filter((child) => child !== null && child !== undefined && child !== false)
