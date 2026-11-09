@@ -94,6 +94,8 @@ node scripts/uninstall.mjs                      # 只删链接与两条 profile 
 | 粒子波动特效 | `particle-wave` | 小球在鼓面上弹跳碰撞。off 为 0 颗，第二档 6 颗；档位越高数量越多、重力越大、初速越快、弹性越强，所以碰撞是物理算出来的，不是写死的概率 |
 | 鲲鹏动效（默认） | `kunpeng` | 直条轨道换成波浪缎带；小鲸鱼沿缎带游过，档位越高体形越大、逐渐长出翅膀，max 时振翅飞天 |
 
+> 还想要别的动效？**[动效 × 著名 IP × 推理强度设计总目录](docs/effects-catalog.md)** 收录了 12 类 74 条可插拔动效、9 类 48 条 IP 母题，以及每条在 DSH 里的落地方式与档位映射。
+
 ### 切换动效
 
 面板标题「思考强度」右边有一个小按钮，显示当前特效名（现在是「鲲鹏动效」）。**点一下切到下一个特效**，
@@ -106,6 +108,20 @@ node scripts/uninstall.mjs                      # 只删链接与两条 profile 
 | 面板按钮 | 点标题右侧的特效名 | 日常切换 |
 | 控制台 | `localStorage.setItem('dsh-model-effort-chips:effect','particle-wave')` 后刷新 | 想直接跳到指定特效 |
 | 改默认 | 把 `lib/client.js` 里的 `DEFAULT_EFFECT_ID` 改成 `'particle-wave'` | 想改所有人/新会话的默认值 |
+
+### 面板尺寸标准（硬约束）
+
+面板尺寸以 **粒子波动特效** 为基准，固定不变：
+
+| 项 | 值 |
+| --- | --- |
+| 面板外框 | **324 × 141 CSS px** |
+| 滑条内容宽 | 284 px |
+| canvas | 284 × 92 px（band 30 + rail 58） |
+| canvas backing store | 568 × 184（DPR 上限 2） |
+
+新特效**不允许撑大面板**：`layout.sky` 会被 `effectiveSky()` 夹到 `MAX_STAGE_SKY = 0`，
+块内也多留不出高度。想在有限空间里表现“更大/更高”，只能缩小元素或改用透视/拖尾表达。
 
 ### 轨道样式由特效声明
 

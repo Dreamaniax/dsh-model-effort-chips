@@ -22,7 +22,8 @@ const energy = Number(process.argv[3] ?? '0.66')
 const outPath = process.argv[4] ?? '/tmp/effect.svg'
 
 const WIDTH = 284
-const HEIGHT = 164
+// The panel standard: band 30 + rail 58, no extra sky is ever granted.
+const HEIGHT = 92
 
 // --- minimal 2D context recorder -------------------------------------------
 let nextGradientId = 0
@@ -227,15 +228,16 @@ const effect = internals.resolveEffect(effectId)
 if (effect === undefined) throw new Error(`unknown effect ${effectId}`)
 
 const layout = effect.layout ?? { sky: 0, track: 'bar', spectrum: true }
-const band = { top: layout.sky, height: 30 }
-const trackY = layout.sky + 30 + 16
+const sky = internals.effectiveSky(effect)
+const band = { top: sky, height: 30 }
+const trackY = sky + 30 + 16
 
 const context = new Context()
 const state = effect.createState()
 const dt = 1 / 30
 // warm up so the creature is somewhere visible
 for (let frame = 0; frame < 12; frame += 1) {
-  effect.step(state, { energy, totalLevels: 4, width: WIDTH, height: HEIGHT, dt, band, trackY, sky: layout.sky })
+  effect.step(state, { energy, totalLevels: 4, width: WIDTH, height: HEIGHT, dt, band, trackY, sky })
 }
 // park the creature mid-canvas so the still shows it
 if (typeof state.x === 'number') state.x = WIDTH * 0.45
@@ -246,7 +248,7 @@ effect.paint(context, state, {
   height: HEIGHT,
   band,
   trackY,
-  sky: layout.sky,
+  sky,
 })
 
 const gradientDefs = defs

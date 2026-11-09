@@ -109,13 +109,20 @@ check(typeof kunpengEffect.summary === 'string' && kunpengEffect.summary.length 
 check(kunpengEffect.layout !== undefined && kunpengEffect.layout !== null, 'the effect declares a layout')
 check(kunpengEffect.layout.track === 'wave', 'the kunpeng track is a wave')
 check(
-  typeof kunpengEffect.layout.sky === 'number' && Number.isFinite(kunpengEffect.layout.sky) && kunpengEffect.layout.sky > 0,
-  'the kunpeng layout reserves sky'
+  typeof kunpengEffect.layout.sky === 'number' && Number.isFinite(kunpengEffect.layout.sky),
+  'the kunpeng layout declares a finite sky'
 )
 check(typeof kunpengEffect.layout.spectrum === 'boolean', 'the layout declares whether it draws a spectrum')
 const barEffect = EFFECTS.find((effect) => effect.id === 'particle-wave')
 check(barEffect?.layout?.track === 'bar', 'the original effect keeps the flat bar track')
-check(kunpengEffect.layout.sky > barEffect.layout.sky, 'the wave effect takes more sky than the bar effect')
+// Panel standard: the particle-wave size is the ceiling, so every effect is
+// clamped to zero extra sky and the panel never grows.
+const { effectiveSky, MAX_STAGE_SKY } = module.__internals
+check(MAX_STAGE_SKY === 0, 'the panel standard allows no extra sky')
+check(effectiveSky(kunpengEffect) === 0, 'kunpeng is clamped into the standard panel')
+check(effectiveSky(barEffect) === 0, 'the particle effect stays at the standard panel')
+check(effectiveSky({ layout: { sky: 200 } }) === 0, 'a greedy effect cannot grow the panel')
+check(effectiveSky({ layout: { sky: Number.NaN } }) === 0, 'a broken sky value falls back to zero')
 
 // --- 2. lookup contract -----------------------------------------------------
 
