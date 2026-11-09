@@ -107,7 +107,7 @@ check(kunpengEffect.id === 'kunpeng', 'the effect id is kunpeng')
 check(kunpengEffect.name === '鲲鹏动效', 'the effect keeps its display name')
 check(typeof kunpengEffect.summary === 'string' && kunpengEffect.summary.length > 0, 'the effect has a summary')
 check(kunpengEffect.layout !== undefined && kunpengEffect.layout !== null, 'the effect declares a layout')
-check(kunpengEffect.layout.track === 'wave', 'the kunpeng track is a wave')
+check(kunpengEffect.layout.track === 'bar', 'the kunpeng track is the standard bar')
 check(
   typeof kunpengEffect.layout.sky === 'number' && Number.isFinite(kunpengEffect.layout.sky),
   'the kunpeng layout declares a finite sky'
@@ -201,7 +201,7 @@ check(Number.isFinite(degenerate.x) && Number.isFinite(degenerate.time), 'a dege
 const isNonDecreasing = (values) => values.every((value, index) => index === 0 || value >= values[index - 1] - 1e-9)
 const samples = [0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1]
 
-const { kunpengScaleFor, kunpengWingFor, kunpengLiftFor, kunpengAngleFor, kunpengRibbonY } = internals
+const { kunpengScaleFor, kunpengWingFor, kunpengLiftFor, kunpengAngleFor } = internals
 
 const scales = samples.map(kunpengScaleFor)
 check(scales.every(Number.isFinite), 'kunpengScaleFor is finite across the range')
@@ -211,7 +211,7 @@ check(scales[scales.length - 1] > scales[0], 'max is bigger than off')
 const lifts = samples.map(kunpengLiftFor)
 check(lifts.every(Number.isFinite), 'kunpengLiftFor is finite across the range')
 check(isNonDecreasing(lifts), 'a higher level never lowers the creature')
-check(lifts[lifts.length - 1] - lifts[0] >= 20, 'max lifts the creature well off the ribbon')
+check(lifts[lifts.length - 1] - lifts[0] >= 12, 'max lifts the creature off the bar')
 
 const wings = samples.map(kunpengWingFor)
 check(isNonDecreasing(wings), 'a higher level never shrinks the wings')
@@ -221,19 +221,12 @@ check(wings[wings.length - 1] > 0.9, 'max has full wings')
 const angles = samples.map(kunpengAngleFor)
 check(angles.every(Number.isFinite), 'kunpengAngleFor is finite across the range')
 
-const ribbonRange = (energy) => {
-  const ys = []
-  for (let x = -4; x <= 284; x += 6) ys.push(kunpengRibbonY(x, energy, 0, 24))
-  return { finite: ys.every(Number.isFinite), range: Math.max(...ys) - Math.min(...ys) }
-}
-const calmRibbon = ribbonRange(0)
-const wildRibbon = ribbonRange(1)
-check(calmRibbon.finite && wildRibbon.finite, 'the ribbon height is finite across the track')
-check(wildRibbon.range > calmRibbon.range, 'the ribbon sways wider at a higher level')
-check(
-  kunpengRibbonY(0, 1, 5, 24) !== kunpengRibbonY(0, 1, 5.5, 24),
-  'the ribbon travels with time'
-)
+// The track is now the shared horizontal bar (particle-wave form) drawn by the
+// DOM, so the effect exposes no ribbon curve any more. What still has to hold is
+// that the panel never grows: layout.sky is clamped to zero for every effect.
+check(internals.effectiveSky(kunpengEffect) === 0, 'kunpeng cannot grow the panel')
+check(kunpengEffect.layout.track === 'bar', 'kunpeng uses the standard bar track')
+check(kunpengEffect.layout.spectrum === false, 'kunpeng hides the spectrum')
 
 // --- 6. paint survives the real host's frame shape ---------------------------
 

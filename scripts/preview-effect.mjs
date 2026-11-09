@@ -239,6 +239,26 @@ const dt = 1 / 30
 for (let frame = 0; frame < 12; frame += 1) {
   effect.step(state, { energy, totalLevels: 4, width: WIDTH, height: HEIGHT, dt, band, trackY, sky })
 }
+// The track is the standard DOM bar now; draw it so the still matches the panel.
+if (layout.track !== 'wave') {
+  const gradient = context.createLinearGradient(0, 0, WIDTH, 0)
+  gradient.addColorStop(0, '#22c55e')
+  gradient.addColorStop(0.33, '#22d3ee')
+  gradient.addColorStop(0.66, '#a855f7')
+  gradient.addColorStop(1, '#e879f9')
+  context.save()
+  context.globalAlpha = 1
+  context.fillStyle = gradient
+  context.beginPath()
+  context.moveTo(0, trackY - 4)
+  context.lineTo(WIDTH, trackY - 4)
+  context.lineTo(WIDTH, trackY + 4)
+  context.lineTo(0, trackY + 4)
+  context.closePath()
+  context.fill()
+  context.restore()
+}
+
 // park the creature mid-canvas so the still shows it
 if (typeof state.x === 'number') state.x = WIDTH * 0.45
 effect.paint(context, state, {
