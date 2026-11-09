@@ -182,6 +182,18 @@ const amplitude = (points) => {
 check(amplitude(wavePoints(1)) > amplitude(wavePoints(0)), 'higher energy grows the wave amplitude')
 check(wavePoints(0.5).split(' ').length === 51, 'wave samples the full width')
 
+// --- M5: alpha, stroke thickness, compact fallback ---------------------------
+
+const { withAlpha, strokeWidthFor, isCompact } = module.__internals
+check(withAlpha('rgb(34, 197, 94)', 0.5) === 'rgba(34, 197, 94, 0.5)', 'withAlpha parses rgb()')
+check(withAlpha('#22c55e', 0.25) === 'rgba(34, 197, 94, 0.25)', 'withAlpha parses hex')
+check(strokeWidthFor(0) === 1, 'off is the thinnest line')
+check(Math.abs(strokeWidthFor(1) - 3.4) < 1e-9, 'max is the thickest line')
+check(strokeWidthFor(0.5) > strokeWidthFor(0) && strokeWidthFor(0.5) < strokeWidthFor(1), 'thickness grows with energy')
+check(isCompact(320) === true, 'a narrow composer goes compact')
+check(isCompact(800) === false, 'a wide composer keeps the text')
+check(isCompact(null) === false, 'an unmeasured composer is not compact')
+
 // --- rendering --------------------------------------------------------------
 
 const flatten = (children) => children.flat(Infinity).filter((child) => child !== null && child !== undefined && child !== false)
