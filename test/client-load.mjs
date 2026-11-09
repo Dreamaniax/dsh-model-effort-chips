@@ -230,7 +230,8 @@ const counts = [0, 1 / 3, 2 / 3, 1].map((energy) => particleCountFor(energy, 4))
 check(counts[0] === 0, 'off has no balls')
 check(counts[1] === 6, 'the second level already shows six balls')
 check(counts[1] < counts[2] && counts[2] < counts[3], 'the pit fills up with the level')
-check(counts[3] - counts[2] >= counts[2] - counts[1], 'each level adds at least as many as the last')
+check(counts[3] <= 18, 'the pit is capped so max does not flood')
+check(counts[3] - counts[2] < counts[2] - counts[1], 'the top end grows slower than the middle')
 check(particleCountFor(1, 5) > 0, 'five-level models get a pit too')
 check(particleCountFor(0, 1) === 0, 'a single level has no pit')
 
@@ -246,6 +247,17 @@ check(dropletRadiusFor(0) === dropletRadiusFor(1), 'the ball size is constant ac
 check(dropletRadiusFor(0) === dropletRadiusFor(0.33), 'the size is pinned at the low level value')
 check(dropletRestitutionFor(0) > 0.5 && dropletRestitutionFor(1) < 1, 'bounciness rises but never exceeds a bounce')
 check(dropletRestitutionFor(1) > dropletRestitutionFor(0), 'the drum bounces harder at high levels')
+
+// --- wheel stepping (M6) ----------------------------------------------------
+
+const { stepLevelIndex, WHEEL_THROTTLE_MS } = module.__internals
+check(stepLevelIndex(1, 1, 4) === 2, 'a notch down steps up one level')
+check(stepLevelIndex(1, -1, 4) === 0, 'a notch up steps down one level')
+check(stepLevelIndex(0, -1, 4) === 0, 'the wheel cannot go below off')
+check(stepLevelIndex(3, 1, 4) === 3, 'the wheel cannot go past max')
+check(stepLevelIndex(-1, 1, 4) === 0, 'an unset level starts at the first stop')
+check(stepLevelIndex(0, 1, 0) === 0, 'no levels means no movement')
+check(WHEEL_THROTTLE_MS === 120, 'the wheel throttle stays at 120ms')
 
 // --- rendering --------------------------------------------------------------
 
