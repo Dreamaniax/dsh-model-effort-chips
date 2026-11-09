@@ -211,6 +211,24 @@ const lightAccent = accentFor(2, 4, true)
 check(luminanceOf(parseColorToRgb(lightAccent)) < luminanceOf(parseColorToRgb(darkAccent)), 'light surface gets a darker accent')
 check(accentFor(0, 4, false) === colorAt(0, 4), 'dark surface keeps the palette colour')
 
+// --- wider magnet + exponential particle/spectrum curves --------------------
+
+const { particleCountFor, spectrumSpanFor, spectrumSwingFor } = module.__internals
+check(Math.abs(magnetize(1 / 3 + 0.09, 4) - 1 / 3) < 0.02, 'the wider magnet catches a drag 9% away')
+check(magnetize(0, 4) === 0 && magnetize(1, 4) === 1, 'the ends stay pinned')
+
+const counts = [0, 1 / 3, 2 / 3, 1].map(particleCountFor)
+check(counts[0] === 0, 'off has no particles')
+check(counts[1] === 2 && counts[2] === 6 && counts[3] === 14, 'particles follow a geometric curve 0,2,6,14')
+check(counts[3] - counts[2] > counts[2] - counts[1], 'each level adds more particles than the last')
+
+check(spectrumSpanFor(0) === 30, 'spectrum starts as a third of the band')
+check(spectrumSpanFor(1) === 100, 'spectrum reaches the full track length at max')
+check(spectrumSpanFor(0.5) > spectrumSpanFor(0) && spectrumSpanFor(0.5) < spectrumSpanFor(1), 'the spectrum widens with the level')
+check(spectrumSwingFor(0.5) - spectrumSwingFor(1) > spectrumSwingFor(0) - spectrumSwingFor(0.5), 'the pulse swing accelerates with the level')
+check(spectrumSwingFor(1) < spectrumSwingFor(0.5) && spectrumSwingFor(0.5) < spectrumSwingFor(0), 'pulse swing deepens with the level')
+check(spectrumSwingFor(1) <= 0.12, 'max level swings almost to nothing')
+
 // --- rendering --------------------------------------------------------------
 
 const flatten = (children) => children.flat(Infinity).filter((child) => child !== null && child !== undefined && child !== false)
