@@ -37,6 +37,10 @@ globalThis.ResizeObserver =
     disconnect() {}
   }
 window.ResizeObserver = globalThis.ResizeObserver
+// jsdom has no 2D context; the effect canvas already guards null.
+window.HTMLCanvasElement.prototype.getContext = function getContext() {
+  return null
+}
 // The canvas host starts a rAF loop; jsdom exposes it on window only.
 globalThis.requestAnimationFrame = window.requestAnimationFrame ?? ((cb) => setTimeout(() => cb(Date.now()), 16))
 globalThis.cancelAnimationFrame = window.cancelAnimationFrame ?? ((id) => clearTimeout(id))

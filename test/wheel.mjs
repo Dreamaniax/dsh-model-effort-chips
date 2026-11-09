@@ -39,6 +39,10 @@ globalThis.ResizeObserver =
     disconnect() {}
   }
 window.ResizeObserver = globalThis.ResizeObserver
+// jsdom has no 2D context; the effect canvas already guards null.
+window.HTMLCanvasElement.prototype.getContext = function getContext() {
+  return null
+}
 
 const React = nodeRequire('react')
 const { createRoot } = nodeRequire('react-dom/client')
