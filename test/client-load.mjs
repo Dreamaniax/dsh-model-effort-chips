@@ -242,7 +242,8 @@ check(spectrumBarHeightFor(3, 1, 1) > spectrumBarHeightFor(3, 0.3, 1), 'the same
 
 check(dropletGravityFor(1) > dropletGravityFor(0.4), 'gravity grows with the level')
 check(dropletSpeedFor(1) > dropletSpeedFor(0.4), 'launch speed grows with the level')
-check(dropletRadiusFor(1) > dropletRadiusFor(0), 'balls get bigger, so they collide more often')
+check(dropletRadiusFor(0) === dropletRadiusFor(1), 'the ball size is constant across levels')
+check(dropletRadiusFor(0) === dropletRadiusFor(0.33), 'the size is pinned at the low level value')
 check(dropletRestitutionFor(0) > 0.5 && dropletRestitutionFor(1) < 1, 'bounciness rises but never exceeds a bounce')
 check(dropletRestitutionFor(1) > dropletRestitutionFor(0), 'the drum bounces harder at high levels')
 
