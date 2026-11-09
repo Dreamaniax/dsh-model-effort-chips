@@ -181,6 +181,8 @@ const textOf = (node) => {
 }
 check(textOf(chips[0]).includes('DeepSeek V4 Flash'), 'model chip shows the catalog name')
 check(textOf(chips[1]).includes('High'), 'effort chip shows the level name')
+check(textOf(chips[0]).includes('\u2304'), 'model chip carries the chevron affordance')
+check(textOf(chips[1]).includes('\u2304'), 'effort chip carries the chevron affordance')
 
 // A model without reasoning metadata hides the effort chip.
 const plainDirectory = makeDirectory({
