@@ -145,6 +145,21 @@ class Context {
     this.path = []
   }
 
+  ellipse(x, y, rx, ry, rotation, start, end) {
+    const center = apply(this.state.transform, x, y)
+    const sweep = Math.abs(end - start)
+    const segments = Math.max(10, Math.round((sweep / (Math.PI * 2)) * 28))
+    for (let index = 0; index <= segments; index += 1) {
+      const angle = start + ((end - start) * index) / segments
+      const cos = Math.cos(angle) * rx
+      const sin = Math.sin(angle) * ry
+      const px = center[0] + cos * Math.cos(rotation) - sin * Math.sin(rotation)
+      const py = center[1] + cos * Math.sin(rotation) + sin * Math.cos(rotation)
+      this.path.push(`${index === 0 ? 'M' : 'L'} ${px.toFixed(2)} ${py.toFixed(2)}`)
+    }
+    this.current = center
+  }
+
   arc(x, y, r, start, end) {
     const center = apply(this.state.transform, x, y)
     const radius = r * Math.abs(this.state.transform.a)

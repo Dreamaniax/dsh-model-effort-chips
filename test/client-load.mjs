@@ -253,21 +253,24 @@ check(dropletRestitutionFor(1) > dropletRestitutionFor(0), 'the drum bounces har
 const { EFFECTS, DEFAULT_EFFECT_ID, resolveEffect, particleWaveEffect } = module.__internals
 check(Array.isArray(EFFECTS) && EFFECTS.length >= 1, 'at least one effect is registered')
 check(DEFAULT_EFFECT_ID === 'kunpeng', 'the default effect is the kunpeng one')
-check(EFFECTS.length === 2, 'two effects are registered')
+check(EFFECTS.length === 9, 'nine effects are registered (particle + kunpeng + 7 physics)')
 check(resolveEffect('kunpeng').name === '鲲鹏动效', 'the kunpeng effect is named 鲲鹏动效')
 check(resolveEffect('kunpeng').layout.track === 'bar', 'every effect uses the standard bar track')
 check(resolveEffect('kunpeng').layout.track === 'bar', 'kunpeng keeps the bar track')
 check(resolveEffect('kunpeng').layout.sky === 84, 'kunpeng asks for its 84px sky band')
-check(resolveEffect('particle-wave') === EFFECTS[0], 'the default resolves to the first effect')
+check(resolveEffect(DEFAULT_EFFECT_ID) === EFFECTS[0], 'the default resolves to the first effect')
 check(resolveEffect('does-not-exist') === EFFECTS[0], 'an unknown id falls back to the first effect')
-check(EFFECTS[0].name === '粒子波动特效', 'the current effect is named 粒子波动特效')
+check(EFFECTS[0].name === '鲲鹏动效', 'the default effect is the kunpeng one')
 check(typeof EFFECTS[0].step === 'function' && typeof EFFECTS[0].paint === 'function', 'an effect exposes step and paint')
 
 const { nextEffectId, readStoredEffectId, writeStoredEffectId, EFFECT_STORAGE_KEY } = module.__internals
-check(nextEffectId('particle-wave') === 'kunpeng', 'particle -> kunpeng')
-check(nextEffectId('kunpeng') === 'particle-wave', 'kunpeng -> particle')
-check(nextEffectId('particle-wave') === 'kunpeng', 'the cycle wraps back to kunpeng')
+check(nextEffectId(EFFECTS[EFFECTS.length - 1].id) === EFFECTS[0].id, 'the cycle wraps back to the first effect')
 check(nextEffectId('does-not-exist') === EFFECTS[0].id, 'an unknown id cycles from the start')
+for (const effect of EFFECTS) {
+  check(resolveEffect(effect.id) === effect, `resolveEffect finds ${effect.id}`)
+  check(effect.name.length > 0 && effect.summary.length > 0, `${effect.id} has a name and a summary`)
+  check(typeof effect.createState === 'function' && typeof effect.step === 'function' && typeof effect.paint === 'function', `${effect.id} implements the contract`)
+}
 check(EFFECT_STORAGE_KEY === 'dsh-model-effort-chips:effect', 'the storage key is stable')
 check(readStoredEffectId() === null, 'no storage in node means no saved effect')
 check(writeStoredEffectId('particle-wave') === undefined, 'writing without storage does not throw')

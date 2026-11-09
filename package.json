@@ -37,11 +37,15 @@
   },
   "license": "MIT",
   "scripts": {
-    "test": "node test/client-load.mjs && node test/render.mjs && node test/wheel.mjs && node test/effect-kunpeng.mjs",
+    "test": "node test/client-load.mjs && node test/render.mjs && node test/wheel.mjs && node test/effect-kunpeng.mjs && node test/effect-menu.mjs && node test/effects-all.mjs && node scripts/assemble-effects.mjs --check",
     "test:load": "node test/client-load.mjs",
     "test:render": "node test/render.mjs",
     "test:wheel": "node test/wheel.mjs",
-    "test:effect": "node test/effect-kunpeng.mjs"
+    "test:effect": "node test/effect-kunpeng.mjs",
+    "test:menu": "node test/effect-menu.mjs",
+    "harness": "node scripts/effect-harness.mjs",
+    "test:effects": "node test/effects-all.mjs",
+    "assemble": "node scripts/assemble-effects.mjs"
   },
   "devDependencies": {
     "jsdom": "^24.1.3",
