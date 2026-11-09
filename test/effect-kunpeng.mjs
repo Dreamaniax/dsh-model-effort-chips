@@ -240,6 +240,17 @@ check(artFramesOf({ naturalWidth: 568 * ART_FRAMES }) === ART_FRAMES, 'a divisib
 check(artFramesOf({ naturalWidth: 568 }) === 1, 'a single-frame pack falls back to one frame')
 check(artFramesOf(null) === 1, 'a missing image does not explode')
 
+// --- 5d. left-to-right travel ----------------------------------------------
+
+const { kunpengCrossSeconds, kunpengDrawScale } = internals
+const crossings = [0, 0.33, 0.66, 1].map(kunpengCrossSeconds)
+check(crossings.every((value) => value > 0 && Number.isFinite(value)), 'a crossing always takes positive time')
+check(crossings[crossings.length - 1] < crossings[0], 'max crosses the panel faster than off')
+check(kunpengCrossSeconds(0.5) < kunpengCrossSeconds(0) && kunpengCrossSeconds(0.5) > kunpengCrossSeconds(1), 'the crossing speeds up with the level')
+const drawScales = [0, 0.5, 1].map(kunpengDrawScale)
+check(isNonDecreasing(drawScales), 'max is drawn at least as large as off')
+check(drawScales[0] > 0.5 && drawScales[drawScales.length - 1] <= 1, 'the creature stays inside the box')
+
 // --- 6. paint survives the real host's frame shape ---------------------------
 
 /** A 2D context stub that records every call and accepts gradient objects. */
