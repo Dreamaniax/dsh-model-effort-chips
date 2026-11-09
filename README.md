@@ -6,9 +6,16 @@
 
 ## 效果预览
 
-![动效演示](docs/demo.gif)
+![动效演示：粒子波动特效](docs/demo.gif)
 
-*点开强度 chip → 滑条浮层；拖拽或滚轮逐档，档位越高小球撞得越凶、频谱呼吸越深。*
+*上面的 GIF 是 **粒子波动特效**：点开强度 chip → 滑条浮层，档位越高小球撞得越凶、频谱呼吸越深。*
+
+默认特效是 **鲲鹏动效**，一条波浪缎带 + 一只随档位长大的生灵：
+
+| off | high | max |
+| --- | --- | --- |
+| ![off](docs/kunpeng-off.png) | ![high](docs/kunpeng-high.png) | ![max](docs/kunpeng-max.png) |
+| 小鲸鱼游过 | 长出翅膀，开始离水 | 振翅飞天，脱离缎带 |
 
 ![改前改后](docs/before-after.png)
 
@@ -80,11 +87,25 @@ node scripts/uninstall.mjs                      # 只删链接与两条 profile 
 
 ## 特效
 
-强度面板底部的 canvas 由一个**可插拔的特效**负责。目前只有一个：
+强度面板底部的 canvas 由一个**可插拔的特效**负责。目前有两个：
 
 | 特效 | id | 说明 |
 | --- | --- | --- |
 | 粒子波动特效 | `particle-wave` | 小球在鼓面上弹跳碰撞。off 为 0 颗，第二档 6 颗；档位越高数量越多、重力越大、初速越快、弹性越强，所以碰撞是物理算出来的，不是写死的概率 |
+| 鲲鹏动效（默认） | `kunpeng` | 直条轨道换成波浪缎带；小鲸鱼沿缎带游过，档位越高体形越大、逐渐长出翅膀，max 时振翅飞天 |
+
+### 轨道样式由特效声明
+
+特效对象新增一个 `layout` 字段，轨道长什么样由它自己决定，面板只管照着摆：
+
+| 字段 | 取值 | 含义 |
+| --- | --- | --- |
+| `sky` | px 数值 | 画布在轨道上方额外留出的天空高度 |
+| `track` | `'bar'` \| `'wave'` | `'bar'` 沿用 DOM 直条轨道；`'wave'` 隐藏 DOM 直条，由 canvas 画波浪缎带 |
+| `spectrum` | 布尔 | 是否显示 DOM 频谱柱 |
+
+`track: 'wave'` 时，DOM 直条轨道与 DOM 频谱柱都隐藏（直条轨道 `opacity: 0`），波浪缎带由 canvas 绘制；
+旋钮、刻度、档位标签仍是 DOM，叠在 canvas 之上。所以换轨道样式不需要改面板，改 `layout` 就够了。
 
 ### 新增一个特效
 
@@ -95,6 +116,8 @@ const myEffect = {
   id: 'my-effect',
   name: '我的特效',
   summary: '一句话说明它在做什么',
+  // 轨道样式：天空高度 / 直条还是波浪 / 是否显示 DOM 频谱
+  layout: { sky: 0, track: 'bar', spectrum: true },
   createState: () => ({ /* 这个特效自己的状态 */ }),
   // 每帧推进；frame = { energy, totalLevels, width, height, dt }
   step(state, frame) {},

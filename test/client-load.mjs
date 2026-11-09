@@ -252,7 +252,10 @@ check(dropletRestitutionFor(1) > dropletRestitutionFor(0), 'the drum bounces har
 
 const { EFFECTS, DEFAULT_EFFECT_ID, resolveEffect, particleWaveEffect } = module.__internals
 check(Array.isArray(EFFECTS) && EFFECTS.length >= 1, 'at least one effect is registered')
-check(DEFAULT_EFFECT_ID === 'particle-wave', 'the default effect id is stable')
+check(DEFAULT_EFFECT_ID === 'kunpeng', 'the default effect is the kunpeng one')
+check(EFFECTS.length === 2, 'two effects are registered')
+check(resolveEffect('kunpeng').name === '鲲鹏动效', 'the kunpeng effect is named 鲲鹏动效')
+check(resolveEffect('kunpeng').layout.track === 'wave', 'kunpeng declares the wave track')
 check(resolveEffect('particle-wave') === EFFECTS[0], 'the default resolves to the first effect')
 check(resolveEffect('does-not-exist') === EFFECTS[0], 'an unknown id falls back to the first effect')
 check(EFFECTS[0].name === '粒子波动特效', 'the current effect is named 粒子波动特效')

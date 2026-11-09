@@ -1,6 +1,6 @@
 {
   "name": "dsh-model-effort-chips",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "private": true,
   "description": "Split DeepSeek Harness's composer model seat into a model chip and a reasoning-effort chip with a draggable, wheel-adjustable slider.",
   "type": "module",
@@ -36,10 +36,11 @@
   },
   "license": "MIT",
   "scripts": {
-    "test": "node test/client-load.mjs && node test/render.mjs && node test/wheel.mjs",
+    "test": "node test/client-load.mjs && node test/render.mjs && node test/wheel.mjs && node test/effect-kunpeng.mjs",
     "test:load": "node test/client-load.mjs",
     "test:render": "node test/render.mjs",
-    "test:wheel": "node test/wheel.mjs"
+    "test:wheel": "node test/wheel.mjs",
+    "test:effect": "node test/effect-kunpeng.mjs"
   },
   "devDependencies": {
     "jsdom": "^24.1.3",
