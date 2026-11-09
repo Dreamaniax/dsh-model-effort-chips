@@ -229,6 +229,23 @@ check(spectrumSwingFor(0.5) - spectrumSwingFor(1) > spectrumSwingFor(0) - spectr
 check(spectrumSwingFor(1) < spectrumSwingFor(0.5) && spectrumSwingFor(0.5) < spectrumSwingFor(0), 'pulse swing deepens with the level')
 check(spectrumSwingFor(1) <= 0.12, 'max level swings almost to nothing')
 
+// --- wave motion synced to the pulse ---------------------------------------
+
+const { waveCalmScaleFor } = module.__internals
+check(waveCalmScaleFor(0) === 1, 'off keeps the wave still')
+check(waveCalmScaleFor(1) < waveCalmScaleFor(0.5) && waveCalmScaleFor(0.5) < waveCalmScaleFor(0), 'the wave breathes deeper as the level rises')
+check(waveCalmScaleFor(1) >= 0.7, 'the calm frame never collapses the wave')
+
+const rippleAt = (dynamic) => {
+  const points = wavePoints(1, 300, 26, dynamic).split(' ').map((pair) => Number(pair.split(',')[1]))
+  return points
+}
+const still = rippleAt(0)
+const alive = rippleAt(1)
+check(still.length === alive.length, 'both frames keep the same sampling')
+check(still.some((y, index) => Math.abs(y - alive[index]) > 0.5), 'the dynamic frame actually ripples')
+check(wavePoints(1, 300, 26, 1) !== wavePoints(1, 300, 26, 0), 'the two frames differ')
+
 // --- rendering --------------------------------------------------------------
 
 const flatten = (children) => children.flat(Infinity).filter((child) => child !== null && child !== undefined && child !== false)
