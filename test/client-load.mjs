@@ -25,8 +25,14 @@ const source = readFileSync(join(here, 'lib', 'client.js'), 'utf8')
 let focus = { value: [] }
 const react = {
   createElement(type, props, ...children) {
-    if (typeof type !== 'string') throw new Error(`unexpected element type: ${String(type)}`)
     return { type, props: props ?? {}, children }
+  },
+  Component: class Component {
+    constructor(props) {
+      this.props = props
+      this.state = {}
+    }
+    setState() {}
   },
   useState(initial) {
     return [typeof initial === 'function' ? initial() : initial, () => {}]
@@ -98,6 +104,12 @@ const ctx = {
       return () => {}
     },
   },
+  inject(names, callback) {
+    return callback(ctx)
+  },
+  get(name, fallback) {
+    return ctx[name] ?? fallback
+  },
   modelDirectories: {
     directoryFor(sessionId) {
       const existing = directories.get(sessionId)
@@ -133,7 +145,13 @@ const check = (ok, label) => {
 
 check(id === 'dsh-model-effort-chips', 'factory id')
 check(typeof module.apply === 'function', 'apply is a function')
-check(module.inject.includes('modelDirectories'), 'inject declares modelDirectories')
+check(Array.isArray(module.inject) && module.inject.length === 0, 'no hard service dependency blocks apply')
+
+const renderSeat = (component, props) => {
+  const outer = component(props)
+  const inner = outer.children.flat(Infinity)[0]
+  return inner.type(inner.props)
+}
 
 module.apply(ctx)
 const seat = registrations.find((entry) => entry.options.name === 'conversation.input.model')
@@ -250,7 +268,7 @@ check(wavePoints(1, 300, 26, 1) !== wavePoints(1, 300, 26, 0), 'the two frames d
 
 const flatten = (children) => children.flat(Infinity).filter((child) => child !== null && child !== undefined && child !== false)
 // Directory not ready yet: the seat must still render (loading state).
-const cold = flatten(seat.component({ sessionId: 's-cold' }).children)
+const cold = flatten(renderSeat(seat.component, { sessionId: 's-cold' }).children)
 check(cold.length >= 1, 'seat renders while the directory is unresolved')
 
 // Ready session with flash/high.
@@ -263,7 +281,7 @@ const directory = makeDirectory({
 })
 ctx.modelDirectories.seed('s1', directory)
 
-const tree = seat.component({ sessionId: 's1' })
+const tree = renderSeat(seat.component, { sessionId: 's1' })
 const chips = flatten(tree.children)
 check(chips.length === 2, 'two chips rendered')
 const textOf = (node) => {
@@ -286,7 +304,7 @@ const plainDirectory = makeDirectory({
   error: null,
 })
 ctx.modelDirectories.seed('s2', plainDirectory)
-const plainTree = flatten(seat.component({ sessionId: 's2' }).children)
+const plainTree = flatten(renderSeat(seat.component, { sessionId: 's2' }).children)
 check(plainTree.length === 1, 'model without levels hides the effort chip')
 
 // Writing a level goes through directory.select with the full selection.
