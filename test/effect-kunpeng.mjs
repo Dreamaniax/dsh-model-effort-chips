@@ -229,6 +229,17 @@ check(internals.effectiveSky(kunpengEffect) === 0, 'kunpeng cannot grow the pane
 check(kunpengEffect.layout.track === 'bar', 'kunpeng uses the standard bar track')
 check(kunpengEffect.layout.spectrum === false, 'kunpeng hides the spectrum')
 
+// --- 5c. sprite-strip playback ---------------------------------------------
+
+const { kunpengFrameRate, artFramesOf, ART_FRAMES } = internals
+check(ART_FRAMES > 1, 'the pack is a multi-frame strip')
+check(kunpengFrameRate(0) > 0, 'off still animates')
+check(kunpengFrameRate(1) > kunpengFrameRate(0), 'max beats faster than off')
+check(kunpengFrameRate(0.5) > kunpengFrameRate(0) && kunpengFrameRate(0.5) < kunpengFrameRate(1), 'the rate grows with the level')
+check(artFramesOf({ naturalWidth: 568 * ART_FRAMES }) === ART_FRAMES, 'a divisible strip reports its frames')
+check(artFramesOf({ naturalWidth: 568 }) === 1, 'a single-frame pack falls back to one frame')
+check(artFramesOf(null) === 1, 'a missing image does not explode')
+
 // --- 6. paint survives the real host's frame shape ---------------------------
 
 /** A 2D context stub that records every call and accepts gradient objects. */
