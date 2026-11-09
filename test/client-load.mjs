@@ -231,7 +231,7 @@ check(accentFor(0, 4, false) === colorAt(0, 4), 'dark surface keeps the palette 
 
 // --- wider magnet + exponential particle/spectrum curves --------------------
 
-const { particleCountFor, spectrumSpanFor, spectrumSwingFor } = module.__internals
+const { particleCountFor, spectrumSpanFor, spectrumBarHeightFor } = module.__internals
 check(Math.abs(magnetize(1 / 3 + 0.09, 4) - 1 / 3) < 0.02, 'the wider magnet catches a drag 9% away')
 check(magnetize(0, 4) === 0 && magnetize(1, 4) === 1, 'the ends stay pinned')
 
@@ -243,26 +243,18 @@ check(counts[3] - counts[2] > counts[2] - counts[1], 'each level adds more parti
 check(spectrumSpanFor(0) === 30, 'spectrum starts as a third of the band')
 check(spectrumSpanFor(1) === 100, 'spectrum reaches the full track length at max')
 check(spectrumSpanFor(0.5) > spectrumSpanFor(0) && spectrumSpanFor(0.5) < spectrumSpanFor(1), 'the spectrum widens with the level')
-check(spectrumSwingFor(0.5) - spectrumSwingFor(1) > spectrumSwingFor(0) - spectrumSwingFor(0.5), 'the pulse swing accelerates with the level')
-check(spectrumSwingFor(1) < spectrumSwingFor(0.5) && spectrumSwingFor(0.5) < spectrumSwingFor(0), 'pulse swing deepens with the level')
-check(spectrumSwingFor(1) <= 0.12, 'max level swings almost to nothing')
+check(spectrumBarHeightFor(3, 1, 1) > spectrumBarHeightFor(3, 1, -1), 'bars grow on the shared breathing')
+check(spectrumBarHeightFor(3, 1, 0) > spectrumBarHeightFor(3, 0.3, 0), 'bars are taller at a higher level')
+check(spectrumBarHeightFor(3, 1, 1) > spectrumBarHeightFor(3, 0.3, 1), 'the same phase keeps the level ordering')
 
 // --- wave motion synced to the pulse ---------------------------------------
 
-const { waveCalmScaleFor } = module.__internals
-check(waveCalmScaleFor(0) === 1, 'off keeps the wave still')
-check(waveCalmScaleFor(1) < waveCalmScaleFor(0.5) && waveCalmScaleFor(0.5) < waveCalmScaleFor(0), 'the wave breathes deeper as the level rises')
-check(waveCalmScaleFor(1) >= 0.7, 'the calm frame never collapses the wave')
+const peak = (points) => Math.max(...points.split(' ').map((pair) => Math.abs(Number(pair.split(',')[1]) - 13)))
+check(peak(wavePoints(1, 300, 26, 1, 0)) > peak(wavePoints(1, 300, 26, -1, 0)), 'the wave breathes with the shared phase')
+check(wavePoints(1, 300, 26, 0, 1.2) !== wavePoints(1, 300, 26, 0, 0), 'the crests travel with the phase')
+check(strokeWidthFor(1) > strokeWidthFor(0.3), 'thickness follows the level only')
 
-const rippleAt = (dynamic) => {
-  const points = wavePoints(1, 300, 26, dynamic).split(' ').map((pair) => Number(pair.split(',')[1]))
-  return points
-}
-const still = rippleAt(0)
-const alive = rippleAt(1)
-check(still.length === alive.length, 'both frames keep the same sampling')
-check(still.some((y, index) => Math.abs(y - alive[index]) > 0.5), 'the dynamic frame actually ripples')
-check(wavePoints(1, 300, 26, 1) !== wavePoints(1, 300, 26, 0), 'the two frames differ')
+check(wavePoints(1, 300, 26, 0, 0).split(' ').length === 51, 'the wave keeps a stable sampling')
 
 // --- rendering --------------------------------------------------------------
 
