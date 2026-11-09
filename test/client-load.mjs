@@ -153,6 +153,16 @@ check(mapEffortIndex(levels4, 'off', levels5, 'medium') === 'off', 'first level 
 check(mapEffortIndex(levels4, undefined, levels5, 'medium') === 'medium', 'no current level falls back to the target default')
 check(mapEffortIndex(levels4, 'high', [], undefined) === undefined, 'model without levels selects no effort')
 
+// --- slider geometry (M3) ---------------------------------------------------
+
+const { colorAt, percentAt } = module.__internals
+check(percentAt(0, 4) === 0 && percentAt(3, 4) === 100, 'level 0/3 sit at the track ends')
+check(percentAt(0, 1) === 50, 'a single level sits centred')
+check(colorAt(0, 4) === 'rgb(34, 197, 94)', 'first level is green')
+check(colorAt(3, 4) === 'rgb(232, 121, 249)', 'last level is magenta')
+check(colorAt(0, 1) === 'rgb(34, 197, 94)', 'a single level stays green')
+check(/^rgb\(/.test(colorAt(1, 4)), 'intermediate levels interpolate')
+
 // --- rendering --------------------------------------------------------------
 
 const flatten = (children) => children.flat(Infinity).filter((child) => child !== null && child !== undefined && child !== false)
