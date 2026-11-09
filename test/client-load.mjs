@@ -183,7 +183,7 @@ check(/^rgb\(/.test(colorAt(1, 4)), 'intermediate levels interpolate')
 
 // --- drag snapping + energy (M4 / M3.5) -------------------------------------
 
-const { nearestIndex, energyFor, wavePoints } = module.__internals
+const { nearestIndex, energyFor } = module.__internals
 check(nearestIndex(0, 4) === 0, 'drag at the left edge snaps to the first level')
 check(nearestIndex(1, 4) === 3, 'drag at the right edge snaps to the last level')
 check(nearestIndex(0.51, 4) === 2, 'drag just past half snaps to the third level')
@@ -192,22 +192,13 @@ check(nearestIndex(-3, 4) === 0 && nearestIndex(9, 4) === 3, 'out-of-range drag 
 check(energyFor(0, 4) === 0 && energyFor(3, 4) === 1, 'energy runs 0..1 across the levels')
 check(energyFor(0, 1) === 1, 'a single level is full energy')
 
-const amplitude = (points) => {
-  const ys = points.split(' ').map((pair) => Number(pair.split(',')[1]))
-  const mid = 13
-  return Math.max(...ys.map((y) => Math.abs(y - mid)))
-}
-check(amplitude(wavePoints(1)) > amplitude(wavePoints(0)), 'higher energy grows the wave amplitude')
-check(wavePoints(0.5).split(' ').length === 76, 'wave samples the full width at 4px steps')
+// the waveform is gone; the droplets carry the motion
 
 // --- M5: alpha, stroke thickness, compact fallback ---------------------------
 
-const { withAlpha, strokeWidthFor, isCompact } = module.__internals
+const { withAlpha, isCompact } = module.__internals
 check(withAlpha('rgb(34, 197, 94)', 0.5) === 'rgba(34, 197, 94, 0.5)', 'withAlpha parses rgb()')
 check(withAlpha('#22c55e', 0.25) === 'rgba(34, 197, 94, 0.25)', 'withAlpha parses hex')
-check(strokeWidthFor(0) === 1, 'off is the thinnest line')
-check(Math.abs(strokeWidthFor(1) - 3.4) < 1e-9, 'max is the thickest line')
-check(strokeWidthFor(0.5) > strokeWidthFor(0) && strokeWidthFor(0.5) < strokeWidthFor(1), 'thickness grows with energy')
 check(isCompact(320) === true, 'a narrow composer goes compact')
 check(isCompact(800) === false, 'a wide composer keeps the text')
 check(isCompact(null) === false, 'an unmeasured composer is not compact')
@@ -231,7 +222,7 @@ check(accentFor(0, 4, false) === colorAt(0, 4), 'dark surface keeps the palette 
 
 // --- wider magnet + exponential particle/spectrum curves --------------------
 
-const { particleCountFor, spectrumSpanFor, spectrumBarHeightFor } = module.__internals
+const { particleCountFor, spectrumBarHeightFor, particleRiseFor, particleDurationFor, particleDelayFor, particleSwayFor } = module.__internals
 check(Math.abs(magnetize(1 / 3 + 0.09, 4) - 1 / 3) < 0.02, 'the wider magnet catches a drag 9% away')
 check(magnetize(0, 4) === 0 && magnetize(1, 4) === 1, 'the ends stay pinned')
 
@@ -240,21 +231,24 @@ check(counts[0] === 0, 'off has no particles')
 check(counts[1] === 2 && counts[2] === 6 && counts[3] === 14, 'particles follow a geometric curve 0,2,6,14')
 check(counts[3] - counts[2] > counts[2] - counts[1], 'each level adds more particles than the last')
 
-check(spectrumSpanFor(0) === 30, 'spectrum starts as a third of the band')
-check(spectrumSpanFor(1) === 100, 'spectrum reaches the full track length at max')
-check(spectrumSpanFor(0.5) > spectrumSpanFor(0) && spectrumSpanFor(0.5) < spectrumSpanFor(1), 'the spectrum widens with the level')
 check(spectrumBarHeightFor(3, 1, 1) > spectrumBarHeightFor(3, 1, -1), 'bars grow on the shared breathing')
 check(spectrumBarHeightFor(3, 1, 0) > spectrumBarHeightFor(3, 0.3, 0), 'bars are taller at a higher level')
 check(spectrumBarHeightFor(3, 1, 1) > spectrumBarHeightFor(3, 0.3, 1), 'the same phase keeps the level ordering')
 
-// --- wave motion synced to the pulse ---------------------------------------
+// --- droplet physics (the drum) --------------------------------------------
 
-const peak = (points) => Math.max(...points.split(' ').map((pair) => Math.abs(Number(pair.split(',')[1]) - 13)))
-check(peak(wavePoints(1, 300, 26, 1, 0)) > peak(wavePoints(1, 300, 26, -1, 0)), 'the wave breathes with the shared phase')
-check(wavePoints(1, 300, 26, 0, 1.2) !== wavePoints(1, 300, 26, 0, 0), 'the crests travel with the phase')
-check(strokeWidthFor(1) > strokeWidthFor(0.3), 'thickness follows the level only')
+const rises = [0, 0.34, 0.67, 1].map((energy) => particleRiseFor(2, energy))
+check(rises[0] < rises[1] && rises[1] < rises[2] && rises[2] < rises[3], 'droplets jump higher as the level rises')
+check(rises[3] - rises[2] > rises[1] - rises[0], 'the jump height accelerates at the top')
 
-check(wavePoints(1, 300, 26, 0, 0).split(' ').length === 76, 'the wave keeps a stable sampling')
+const durations = [0, 0.34, 0.67, 1].map((energy) => particleDurationFor(2, energy))
+check(durations[0] > durations[3], 'the bounce gets faster with the level')
+check(durations[0] < 2 && durations[3] > 0.3, 'bounce period stays in a sane range')
+
+check(particleDelayFor(3, 1) < particleDelayFor(3, 0), 'strikes land sooner at a higher level')
+check(particleDelayFor(0, 1) !== particleDelayFor(1, 1), 'droplets are staggered, not in lockstep')
+check(particleSwayFor(0, 1) > 0 && particleSwayFor(1, 1) < 0, 'the sway alternates direction')
+check(Math.abs(particleSwayFor(0, 1)) > Math.abs(particleSwayFor(0, 0)), 'the sway widens with the level')
 
 // --- rendering --------------------------------------------------------------
 
