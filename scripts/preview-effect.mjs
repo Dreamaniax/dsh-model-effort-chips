@@ -119,6 +119,32 @@ class Context {
     this.current = point
   }
 
+  bezierCurveTo(c1x, c1y, c2x, c2y, x, y) {
+    const c1 = apply(this.state.transform, c1x, c1y)
+    const c2 = apply(this.state.transform, c2x, c2y)
+    const point = apply(this.state.transform, x, y)
+    this.path.push(
+      `C ${c1[0].toFixed(2)} ${c1[1].toFixed(2)} ${c2[0].toFixed(2)} ${c2[1].toFixed(2)} ${point[0].toFixed(2)} ${point[1].toFixed(2)}`
+    )
+    this.current = point
+  }
+
+  fillRect(x, y, w, h) {
+    const topLeft = apply(this.state.transform, x, y)
+    const bottomRight = apply(this.state.transform, x + w, y + h)
+    this.path = [
+      `M ${topLeft[0].toFixed(2)} ${topLeft[1].toFixed(2)}`,
+      `L ${bottomRight[0].toFixed(2)} ${topLeft[1].toFixed(2)}`,
+      `L ${bottomRight[0].toFixed(2)} ${bottomRight[1].toFixed(2)}`,
+      `L ${topLeft[0].toFixed(2)} ${bottomRight[1].toFixed(2)}`,
+      'Z',
+    ]
+    body.push(
+      `<path d="${this.path.join(' ')}" fill="${colorOf(this.state.fillStyle)}" fill-opacity="${this.state.globalAlpha.toFixed(3)}"/>`
+    )
+    this.path = []
+  }
+
   arc(x, y, r, start, end) {
     const center = apply(this.state.transform, x, y)
     const radius = r * Math.abs(this.state.transform.a)
