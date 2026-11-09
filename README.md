@@ -1,93 +1,136 @@
 # dsh-model-effort-chips
 
-把 DSH 输入区那颗合并的「模型 · 思考强度」按钮拆成两枚独立控件：
+> DeepSeek Harness 的模型 / 思考强度分体控件：把输入区那颗合并的「模型 · 强度」按钮拆成两枚独立 chip。
 
-- **模型 chip** — 一步切换（flash / pro，按当前会话目录列出）
-- **强度 chip** — 收起态只显示档位名（`high`）；点开是一个**按档位动态变化的滑条浮层**
+[![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-> 状态：v0.7.0 — 滑条可拖（松手吸附、只写一次）+ 键盘；旋钮改成 SVG 圆、波形粗细随档位增长、去掉模糊光晕层；补齐锁定/紧凑/加载空错误态与焦点回传。
+| 控件 | 长什么样 | 点开 |
+| --- | --- | --- |
+| 模型 chip | `[DeepSeek V4 Flash ⌄]` | 当前会话的模型目录，一步切换 |
+| 强度 chip | `[high ⌄]` | 渐变轨道滑条：可点击、可拖拽、可滚轮，档位越高频谱呼吸越深、小球撞得越凶 |
 
-## 为什么是插件而不是改 DSH
+- 档位按模型**动态**读取（`reasoning.efforts`）：4 档模型画 4 个停靠点，5 档模型自动变 5 个
+- 换模型时档位按**序号**迁移（第 3 档 → 第 3 档），目标档位不够时夹到最近一档
+- 支持浅色 / 深色主题（读宿主表面色算亮度，自动加深强调色）
+- 键盘可用：←/→ 逐档，Esc 关闭，焦点回到打开它的 chip
+
+---
+
+## 安装
+
+三种方式，选一种。
+
+### 1. git clone + 本地脚本（推荐，已验证）
+
+```sh
+git clone https://github.com/<your-name>/dsh-model-effort-chips.git
+cd dsh-model-effort-chips
+node scripts/install.mjs          # 写 link 依赖 + bundles 条目 + 建软链 + 四项校验
+```
+
+然后**完全退出并重开** DeepSeek Harness（客户端 bundle 在启动时注入）。
+
+> 为什么用脚本：`desktop` profile 被 Electron 独占，`dsh plugin --profile desktop add ...`
+> 会被直接拒绝（`profile "desktop" is managed exclusively by the Electron application`）。
+> 脚本做的正是官方 CLI 会做的事：改 profile 的 `package.json`、写
+> `dsh.profile.bundles`、在 `node_modules` 下建软链。
+
+### 2. DSH 里的插件命令（非 desktop profile）
+
+```sh
+dsh plugin --profile <name> add link:/absolute/path/to/dsh-model-effort-chips
+dsh plugin --profile <name> add github:<your-name>/dsh-model-effort-chips
+```
+
+### 3. 手动（看清楚再动）
+
+在 `~/.dsh/profiles/<profile>/package.json` 里加两处：
+
+```jsonc
+{
+  "dependencies": { "dsh-model-effort-chips": "link:/absolute/path/to/dsh-model-effort-chips" },
+  "dsh": { "profile": { "bundles": [ "...", "dsh-model-effort-chips" ] } }
+}
+```
+
+再建软链 `node_modules/dsh-model-effort-chips -> 那个目录`，然后重启。
+装完可以直接自检，见下节。
+
+---
+
+## 自检 / 卸载
+
+```sh
+node scripts/verify.mjs --port <DSH 页面端口>   # 依赖、bundles、软链、启动图、服务端字节五项
+node scripts/uninstall.mjs                      # 只删链接与两条 profile 记录，代码留着
+```
+
+`verify.mjs` 专门抓「装上了但浏览器没拿到」这一类：它会去读宿主的客户端启动图，
+再拉一次 bundle 与本地文件逐字节比对。
+
+---
+
+## 原理：为什么是插件而不是改 DSH
 
 思考强度控件属于核心包 `@deepseek-ai/dsh-client-ui-model-selection`，打包在签名的
 `app.asar` 里，只能读不能改。它对外的唯一扩展点是 `conversation.input.model.label`，
 而那个槽官方注明「纯展示、不可交互」。
 
-但输入区的座位是一个可接管的 single 槽：`conversation.input.model`，官方注册时没写
-`priority`（= 0），同优先级撞车会抛错，**换优先级就是遮蔽**。本插件用 `priority: -1`
-接管它，走的是公开面，不改 DSH 源码。
+但输入区的座位是一个可接管的 **single 槽**：`conversation.input.model`，官方注册时没写
+`priority`（= 0）。同优先级撞车会抛错，**换优先级就是遮蔽**——本插件用 `priority: -1`
+接管它，全程只用公开面，不改 DSH 源码。
 
-## 设计决定（已与用户确认）
-
-| 项 | 决定 |
-| --- | --- |
-| 收起态 | 只有档位名（`high`），不带迷你条 |
-| 档位集合 | 按模型动态读取 `reasoning.efforts`，flash 四档、别的模型五档都照实画 |
-| 换模型 | 按**序号**映射（第 3 档 → 第 3 档）；目标模型档位不足时夹到最近的一档 |
-| 视觉 | 全量还原参考图（渐变轨道 + 发光旋钮 + 能量随档位），但先跑通交互再上动效 |
-| 滚轮 | 已实现：悬停 chip 或面板，上滚加档、下滚减档，120ms 节流，事件绑在原生 listener 上以便 preventDefault |
-
-## 数据路径（只用官方公开面）
+数据也只用公开面：
 
 | 用途 | 接口 |
 | --- | --- |
-| 读档位 / 目录 | `ctx.modelDirectories.directoryFor(sessionId).store.getSnapshot()` |
+| 读目录 / 当前档位 | `ctx.modelDirectories.directoryFor(sessionId).store.getSnapshot()` |
 | 写档位 | `directory.select({ provider, model, reasoningEffort })` |
 | 订阅 | `store.subscribe()` + `React.useSyncExternalStore` |
 
-插件级 `inject` 必须声明 `remote` / `remote.session`：`directoryFor()` 给新 binding
-建实例时要访问它们，少了会抛 `cannot get property "remote.session" without inject`。
+## 健壮性（踩过的坑都写进了测试）
 
-## 安装
+| 风险 | 处理 |
+| --- | --- |
+| 服务未就绪导致 `apply` 永不执行 → 静默退回官方控件 | 插件级 `inject` 清空，服务全部惰性解析 |
+| 渲染抛错 → 整个 slot 崩掉 | 渲染错误边界，降级成一颗 `⚠️ effort`（tooltip 带错误原文） |
+| 选中 RPC 永不返回 → 控件永久禁用 | `busy` 不再禁用控件；4 秒看门狗重建目录实例 |
+| 快速滚轮被节流吞掉 | 尾触发：窗口内保留最后一次方向 |
+| 样式表热重载残留 | 样式表带版本号，版本不一致就替换 |
+| 宿主全局样式压扁形状 | 几何全部内联，旋钮用 SVG 圆 |
 
-`desktop` profile 被 Electron 独占，`dsh plugin` 命令行会直接拒绝，所以用脚本：
+---
 
-```bash
-node scripts/install.mjs              # 写 link 依赖 + bundles 条目 + 建软链 + 校验
-node scripts/install.mjs --dry-run    # 只看会写什么
+## 开发与测试
+
+```sh
+npm install        # 只装测试依赖：react / react-dom / jsdom
+npm test           # 三套一起跑
+npm run test:load   # 桩宿主：数据、映射、磁吸、曲线（87 条）
+npm run test:render # 真 React SSR：席位与滑条渲染（19 条，含 1/4/5 档）
+npm run test:wheel  # jsdom + 真 DOM：滚轮逐档、快拨、挂死、抛错（9 条）
+node scripts/verify.mjs --port <端口>
 ```
 
-装完**完全退出并重开** DSH Desktop（客户端 bundle 在启动时注入）。
+改动 `lib/client.js` 后**不需要构建**——这是手写的 ESM bundle，重启 DSH 即可加载；
+如果只是想让浏览器重新取包，硬刷新（⌘⇧R）就够。
 
-## 卸载
-
-```bash
-node scripts/uninstall.mjs            # 只删链接与两条 profile 记录，留着你这份代码
-```
-
-卸载后重启，官方模型席原样回来。
-
-## 结构
+## 目录
 
 ```
-lib/index.js      host 半边：空实现，只为让 client 半边被 /plugins 提供
-lib/client.js     浏览器半边：接管座位、渲染两枚 chip（M0 静态）
+lib/index.js      host 半边：空实现，只为让 client bundle 被 /plugins 提供
+lib/client.js     浏览器半边：接管座位、两枚 chip、滑条、小球物理、滚轮
 cordis.patch.yml  bundle patch：把本包插入 profile 的 plugin 名单
-scripts/          install / uninstall
+scripts/          install / uninstall / verify
+test/             client-load（桩）/ render（真 React）/ wheel（jsdom）
 ```
 
-## 里程碑
+## 已知限制
 
-| 阶段 | 内容 | 状态 |
-| --- | --- | --- |
-| M0 | 加载链路 + 接管座位，两枚静态 chip | 已验证 |
-| M1 | 读目录快照；模型 chip 可切换；档位随模型动态 | 待验收 |
-| M2 | 强度浮层（素颜）：点击设档、松手写一次、失败回滚 | 待验收 |
-| M2.1 | 强度 chip 补上 `⌄` 下标，读作「可调」 | 已提交 |
-| M3 | 视觉还原：渐变轨道 / 发光旋钮 / 档位配色 / 能量随档位 | 待验收 |
-| M3.5 | 全量动效：波形带 + 频谱 + 粒子 | 待验收 |
-| M4 | 拖动吸附 + 键盘 + Esc + 外部点击关闭 | 待验收 |
-| M5 | 锁定态 / 紧凑态 / 加载空错误态 / a11y | 待验收 |
-| v0.7 | 轨道刻度 / 磁吸拖拽 / 粒子与频谱随档位增强 / 亮色底适配 | 待验收 |
-| v0.8 | 磁吸范围加大；粒子数按几何级数增长；频谱横向长到整条轨道 | 待验收 |
-| v1.2 | 去掉波形；粒子改为鼓面水珠弹跳 | 待验收 |
-| v1.3 | 粒子换成 canvas 小球碰撞池：off 为 0，第二档 6 颗，球半径恒定 2.5px | 待验收 |
-| v1.4 | 滚轮调档；max 密度收敛 | 待验收 |
-| v1.5 | max 密度降到 high 水平；频谱呼吸幅度随档位加深；滚轮改为尾触发 + 乐观档位 + 卡死看门狗 | 待验收 |
-| M6 | 滚轮调档（chip 与面板均可，120ms 节流） | 待验收 |
+- 依赖「single 槽 + priority 遮蔽」这一官方语义，DSH 大版本升级可能改变它；届时最差是回到官方控件
+- 档位集合完全由模型自己声明，模型没声明档位时强度 chip 会整颗消失
+- 官方 `/model` 弹窗未受影响，仍可正常使用
 
-## 风险
+## License
 
-接管依赖「single 槽 + priority 遮蔽」这一官方语义，DSH 升级可能改变它。
-`lib/client.js` 因此做了 fail-open：接管抛错就退到 `conversation.input.right`，
-最差是两颗按钮，绝不会两边都没有。
+[MIT](LICENSE)
