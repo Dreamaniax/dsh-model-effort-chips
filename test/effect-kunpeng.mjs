@@ -229,6 +229,24 @@ check(internals.effectiveSky(kunpengEffect) === 0, 'kunpeng cannot grow the pane
 check(kunpengEffect.layout.track === 'bar', 'kunpeng uses the standard bar track')
 check(kunpengEffect.layout.spectrum === false, 'kunpeng hides the spectrum')
 
+// --- 5b. art motion: swimming at low levels, wing beats at high ----------
+
+const { kunpengSwimRate, kunpengTravelFor, kunpengBobFor, kunpengTiltFor, kunpengSquashFor } = internals
+const motionSamples = [0, 0.25, 0.5, 0.75, 1]
+const rates = motionSamples.map(kunpengSwimRate)
+const travels = motionSamples.map(kunpengTravelFor)
+const bobs = motionSamples.map(kunpengBobFor)
+const tilts = motionSamples.map(kunpengTiltFor)
+const squashes = motionSamples.map(kunpengSquashFor)
+
+check(rates.every(Number.isFinite) && rates.every((value) => value > 0), 'the creature always moves')
+check(rates[rates.length - 1] > rates[0] * 2, 'max moves at least twice as fast as off')
+check(isNonDecreasing(rates), 'a higher level never slows the creature down')
+check(isNonDecreasing(travels), 'the swim stroke widens with the level')
+check(isNonDecreasing(bobs), 'the bob gets stronger with the level')
+check(tilts.every((value) => value > 0 && value < 0.1), 'the tilt stays subtle')
+check(squashes.every((value) => value > 0 && value < 0.1), 'the wing-beat squash stays subtle')
+
 // --- 6. paint survives the real host's frame shape ---------------------------
 
 /** A 2D context stub that records every call and accepts gradient objects. */

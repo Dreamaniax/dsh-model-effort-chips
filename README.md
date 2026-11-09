@@ -102,6 +102,8 @@ node scripts/uninstall.mjs                      # 只删链接与两条 profile 
 插画版从 `lib/assets/kunpeng/{off,low,high,max}.png` 读取，宿主在 `/plugins/<包名>/assets/kunpeng/<档位>.png` 提供该路由。
 
 - **568 × 168**（天空带 284 × 84 的 2 倍），**RGBA 透明背景**
+- 单张静止图即可：位移（±5→25px）+ 上下浮沉 + 微旋转 + 呼吸式纵向缩放，档位越高节奏越快
+- 低档（off/low）在水线背景下游动，高档（high/max）以振翅节奏起伏
 - 只画主体本身和它的小粒子，不要底板、不要矩形、不要暗色背景
 - 四张机位与配色连续；缺任意一张自动回退到程序化版本，不会白屏
 
