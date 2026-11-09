@@ -31,7 +31,7 @@
 ### 1. git clone + 本地脚本（推荐，已验证）
 
 ```sh
-git clone https://github.com/<your-name>/dsh-model-effort-chips.git
+git clone https://github.com/Dreamaniax/dsh-model-effort-chips.git
 cd dsh-model-effort-chips
 node scripts/install.mjs          # 写 link 依赖 + bundles 条目 + 建软链 + 四项校验
 ```
@@ -47,7 +47,7 @@ node scripts/install.mjs          # 写 link 依赖 + bundles 条目 + 建软链
 
 ```sh
 dsh plugin --profile <name> add link:/absolute/path/to/dsh-model-effort-chips
-dsh plugin --profile <name> add github:<your-name>/dsh-model-effort-chips
+dsh plugin --profile <name> add github:Dreamaniax/dsh-model-effort-chips
 ```
 
 ### 3. 手动（看清楚再动）

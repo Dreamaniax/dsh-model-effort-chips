@@ -55,13 +55,13 @@
     "reasoning-effort",
     "model-selector"
   ],
-  "author": "dreamania",
+  "author": "Dreamaniax",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/<your-name>/dsh-model-effort-chips.git"
+    "url": "git+https://github.com/Dreamaniax/dsh-model-effort-chips.git"
   },
-  "homepage": "https://github.com/<your-name>/dsh-model-effort-chips#readme",
+  "homepage": "https://github.com/Dreamaniax/dsh-model-effort-chips#readme",
   "bugs": {
-    "url": "https://github.com/<your-name>/dsh-model-effort-chips/issues"
+    "url": "https://github.com/Dreamaniax/dsh-model-effort-chips/issues"
   }
 }
