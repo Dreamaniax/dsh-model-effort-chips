@@ -194,6 +194,23 @@ check(isCompact(320) === true, 'a narrow composer goes compact')
 check(isCompact(800) === false, 'a wide composer keeps the text')
 check(isCompact(null) === false, 'an unmeasured composer is not compact')
 
+// --- magnetism + light-surface accents (user round 4) -----------------------
+
+const { magnetize, shade, accentFor, parseColorToRgb, luminanceOf } = module.__internals
+check(Math.abs(magnetize(0.334, 4) - 1 / 3) < 1e-3, 'a drag right on a level sticks to it')
+check(Math.abs(magnetize(0.36, 4) - 0.36) > 0.01, 'inside the magnet range the knob is pulled')
+check(magnetize(0.5, 4) === 0.5, 'outside the magnet range the knob follows the pointer exactly')
+check(magnetize(0.999, 4) > 0.99, 'the magnet never overshoots the last level')
+check(magnetize(0.5, 1) === 0.5, 'a single level does not magnetize')
+check(shade('rgb(34, 197, 94)', -0.5) === 'rgb(17, 99, 47)', 'shade darkens toward black')
+check(shade('rgb(34, 197, 94)', 0.5) === 'rgb(145, 226, 175)', 'shade lightens toward white')
+check(parseColorToRgb('rgba(10, 20, 30, 0.5)')[2] === 30, 'parseColorToRgb reads rgba')
+check(Math.abs(luminanceOf([255, 255, 255]) - 1) < 1e-9 && Math.abs(luminanceOf([0, 0, 0])) < 1e-9, 'luminance spans 0..1')
+const darkAccent = accentFor(2, 4, false)
+const lightAccent = accentFor(2, 4, true)
+check(luminanceOf(parseColorToRgb(lightAccent)) < luminanceOf(parseColorToRgb(darkAccent)), 'light surface gets a darker accent')
+check(accentFor(0, 4, false) === colorAt(0, 4), 'dark surface keeps the palette colour')
+
 // --- rendering --------------------------------------------------------------
 
 const flatten = (children) => children.flat(Infinity).filter((child) => child !== null && child !== undefined && child !== false)

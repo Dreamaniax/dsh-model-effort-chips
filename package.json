@@ -1,6 +1,6 @@
 {
   "name": "dsh-model-effort-chips",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "private": true,
   "description": "Split the DSH composer model seat into a model chip and a reasoning-effort chip whose popover is a draggable effort slider.",
   "type": "module",
