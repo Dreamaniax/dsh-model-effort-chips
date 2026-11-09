@@ -248,6 +248,25 @@ check(dropletRadiusFor(0) === dropletRadiusFor(0.33), 'the size is pinned at the
 check(dropletRestitutionFor(0) > 0.5 && dropletRestitutionFor(1) < 1, 'bounciness rises but never exceeds a bounce')
 check(dropletRestitutionFor(1) > dropletRestitutionFor(0), 'the drum bounces harder at high levels')
 
+// --- effect registry (the extension point) ----------------------------------
+
+const { EFFECTS, DEFAULT_EFFECT_ID, resolveEffect, particleWaveEffect } = module.__internals
+check(Array.isArray(EFFECTS) && EFFECTS.length >= 1, 'at least one effect is registered')
+check(DEFAULT_EFFECT_ID === 'particle-wave', 'the default effect id is stable')
+check(resolveEffect('particle-wave') === EFFECTS[0], 'the default resolves to the first effect')
+check(resolveEffect('does-not-exist') === EFFECTS[0], 'an unknown id falls back to the first effect')
+check(EFFECTS[0].name === '粒子波动特效', 'the current effect is named 粒子波动特效')
+check(typeof EFFECTS[0].step === 'function' && typeof EFFECTS[0].paint === 'function', 'an effect exposes step and paint')
+
+const pit = particleWaveEffect.createState()
+check(Array.isArray(pit.balls) && pit.balls.length === 0, 'a fresh effect state starts empty')
+for (let frame = 0; frame < 120; frame += 1) {
+  particleWaveEffect.step(pit, { energy: 1, totalLevels: 4, width: 280, height: 30, dt: 0.016 })
+}
+check(pit.balls.length === particleCountFor(1, 4), 'stepping fills the pit to the level density')
+const inside = pit.balls.every((ball) => ball.x >= 0 && ball.x <= 280 && ball.y >= 0 && ball.y <= 30)
+check(inside, 'balls stay inside the band')
+
 // --- wheel stepping (M6) ----------------------------------------------------
 
 const { stepLevelIndex, WHEEL_THROTTLE_MS } = module.__internals

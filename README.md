@@ -78,6 +78,36 @@ node scripts/uninstall.mjs                      # 只删链接与两条 profile 
 
 ---
 
+## 特效
+
+强度面板底部的 canvas 由一个**可插拔的特效**负责。目前只有一个：
+
+| 特效 | id | 说明 |
+| --- | --- | --- |
+| 粒子波动特效 | `particle-wave` | 小球在鼓面上弹跳碰撞。off 为 0 颗，第二档 6 颗；档位越高数量越多、重力越大、初速越快、弹性越强，所以碰撞是物理算出来的，不是写死的概率 |
+
+### 新增一个特效
+
+特效是一个普通对象，注册进 `EFFECTS` 即可，不需要改 canvas、循环或面板：
+
+```js
+const myEffect = {
+  id: 'my-effect',
+  name: '我的特效',
+  summary: '一句话说明它在做什么',
+  createState: () => ({ /* 这个特效自己的状态 */ }),
+  // 每帧推进；frame = { energy, totalLevels, width, height, dt }
+  step(state, frame) {},
+  // 每帧绘制；frame = { energy, accent, width, height }
+  paint(context, state, frame) {},
+}
+
+const EFFECTS = [particleWaveEffect, myEffect]
+```
+
+再把 `DEFAULT_EFFECT_ID` 指过去（后续会做成设置项，让每个会话/用户各选一个）。
+新增特效请配一条纯函数测试，至少覆盖“档位越高强度越大”和“画布边界内”。
+
 ## 原理：为什么是插件而不是改 DSH
 
 思考强度控件属于核心包 `@deepseek-ai/dsh-client-ui-model-selection`，打包在签名的
