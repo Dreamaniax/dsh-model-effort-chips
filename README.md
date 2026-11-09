@@ -4,6 +4,14 @@
 
 [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
+## 效果预览
+
+![动效演示](docs/demo.gif)
+
+*点开强度 chip → 滑条浮层；拖拽或滚轮逐档，档位越高小球撞得越凶、频谱呼吸越深。*
+
+![改前改后](docs/before-after.png)
+
 | 控件 | 长什么样 | 点开 |
 | --- | --- | --- |
 | 模型 chip | `[DeepSeek V4 Flash ⌄]` | 当前会话的模型目录，一步切换 |
