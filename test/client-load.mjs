@@ -222,33 +222,29 @@ check(accentFor(0, 4, false) === colorAt(0, 4), 'dark surface keeps the palette 
 
 // --- wider magnet + exponential particle/spectrum curves --------------------
 
-const { particleCountFor, spectrumBarHeightFor, particleRiseFor, particleDurationFor, particleDelayFor, particleSwayFor } = module.__internals
+const { particleCountFor, spectrumBarHeightFor, dropletRadiusFor, dropletGravityFor, dropletSpeedFor, dropletRestitutionFor } = module.__internals
 check(Math.abs(magnetize(1 / 3 + 0.09, 4) - 1 / 3) < 0.02, 'the wider magnet catches a drag 9% away')
 check(magnetize(0, 4) === 0 && magnetize(1, 4) === 1, 'the ends stay pinned')
 
-const counts = [0, 1 / 3, 2 / 3, 1].map(particleCountFor)
-check(counts[0] === 0, 'off has no particles')
-check(counts[1] === 2 && counts[2] === 6 && counts[3] === 14, 'particles follow a geometric curve 0,2,6,14')
-check(counts[3] - counts[2] > counts[2] - counts[1], 'each level adds more particles than the last')
+const counts = [0, 1 / 3, 2 / 3, 1].map((energy) => particleCountFor(energy, 4))
+check(counts[0] === 0, 'off has no balls')
+check(counts[1] === 6, 'the second level already shows six balls')
+check(counts[1] < counts[2] && counts[2] < counts[3], 'the pit fills up with the level')
+check(counts[3] - counts[2] >= counts[2] - counts[1], 'each level adds at least as many as the last')
+check(particleCountFor(1, 5) > 0, 'five-level models get a pit too')
+check(particleCountFor(0, 1) === 0, 'a single level has no pit')
 
 check(spectrumBarHeightFor(3, 1, 1) > spectrumBarHeightFor(3, 1, -1), 'bars grow on the shared breathing')
 check(spectrumBarHeightFor(3, 1, 0) > spectrumBarHeightFor(3, 0.3, 0), 'bars are taller at a higher level')
 check(spectrumBarHeightFor(3, 1, 1) > spectrumBarHeightFor(3, 0.3, 1), 'the same phase keeps the level ordering')
 
-// --- droplet physics (the drum) --------------------------------------------
+// --- ball pit physics -------------------------------------------------------
 
-const rises = [0, 0.34, 0.67, 1].map((energy) => particleRiseFor(2, energy))
-check(rises[0] < rises[1] && rises[1] < rises[2] && rises[2] < rises[3], 'droplets jump higher as the level rises')
-check(rises[3] - rises[2] > rises[1] - rises[0], 'the jump height accelerates at the top')
-
-const durations = [0, 0.34, 0.67, 1].map((energy) => particleDurationFor(2, energy))
-check(durations[0] > durations[3], 'the bounce gets faster with the level')
-check(durations[0] < 2 && durations[3] > 0.3, 'bounce period stays in a sane range')
-
-check(particleDelayFor(3, 1) < particleDelayFor(3, 0), 'strikes land sooner at a higher level')
-check(particleDelayFor(0, 1) !== particleDelayFor(1, 1), 'droplets are staggered, not in lockstep')
-check(particleSwayFor(0, 1) > 0 && particleSwayFor(1, 1) < 0, 'the sway alternates direction')
-check(Math.abs(particleSwayFor(0, 1)) > Math.abs(particleSwayFor(0, 0)), 'the sway widens with the level')
+check(dropletGravityFor(1) > dropletGravityFor(0.4), 'gravity grows with the level')
+check(dropletSpeedFor(1) > dropletSpeedFor(0.4), 'launch speed grows with the level')
+check(dropletRadiusFor(1) > dropletRadiusFor(0), 'balls get bigger, so they collide more often')
+check(dropletRestitutionFor(0) > 0.5 && dropletRestitutionFor(1) < 1, 'bounciness rises but never exceeds a bounce')
+check(dropletRestitutionFor(1) > dropletRestitutionFor(0), 'the drum bounces harder at high levels')
 
 // --- rendering --------------------------------------------------------------
 
