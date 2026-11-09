@@ -120,8 +120,7 @@ check(barEffect?.layout?.track === 'bar', 'the original effect keeps the flat ba
 const { effectiveSky, MAX_STAGE_SKY } = module.__internals
 check(MAX_STAGE_SKY > 0 && MAX_STAGE_SKY <= 96, 'the panel budget allows a bounded sky band')
 check(effectiveSky(barEffect) === 0, 'the particle effect stays at the baseline panel')
-check(effectiveSky(kunpengEffect) === 0, 'the procedural painter stays at the baseline panel')
-check(effectiveSky(internals.resolveEffect('kunpeng-art')) === 84, 'the art variant gets an 84px sky band')
+check(effectiveSky(kunpengEffect) === 84, 'kunpeng gets an 84px sky band for the art')
 check(effectiveSky({ layout: { sky: 200 } }) === MAX_STAGE_SKY, 'a greedy effect is clamped to the budget')
 check(effectiveSky({ layout: { sky: Number.NaN } }) === 0, 'a broken sky value falls back to zero')
 
@@ -146,7 +145,7 @@ const withinCanvas = (x, width) => Number.isFinite(x) && x >= -NEAR && x <= widt
 
 const fresh = kunpengEffect.createState()
 check(typeof fresh === 'object' && fresh !== null, 'createState returns an object')
-check(Number.isFinite(fresh.time) && Number.isFinite(fresh.x), 'a fresh state carries finite time/x')
+check(Number.isFinite(fresh.time) && Number.isFinite(fresh.travel), 'a fresh state carries finite time/travel')
 check(kunpengEffect.createState() !== fresh, 'createState returns a fresh state each call')
 
 for (const energy of [0, 0.5, 1]) {
@@ -158,8 +157,8 @@ for (const energy of [0, 0.5, 1]) {
   try {
     for (let frame = 0; frame < 120; frame += 1) {
       kunpengEffect.step(state, stepFrame(energy))
-      if (!Number.isFinite(state.x) || !Number.isFinite(state.time)) nonFinite = true
-      if (!withinCanvas(state.x, 280)) escaped = true
+      if (!Number.isFinite(state.travel) || !Number.isFinite(state.time)) nonFinite = true
+      if (state.travel < 0 || state.travel >= 1) escaped = true
     }
   } catch (error) {
     stepError = error
@@ -167,22 +166,22 @@ for (const energy of [0, 0.5, 1]) {
   check(stepError === null, `${label}: 120 steps do not throw`)
   check(!nonFinite, `${label}: the state never turns NaN/Infinity`)
   check(Number.isFinite(state.time) && state.time > 0, `${label}: time advances`)
-  check(!escaped, `${label}: the creature stays near the canvas`)
+  check(!escaped, `${label}: travel stays inside 0..1`)
 }
 
-// A long run has to pass the right edge and wrap around more than once.
+// A long run has to wrap the loop more than once and stay bounded.
 const longState = kunpengEffect.createState()
-let previousX = longState.x
+let previous = longState.travel
 let wraps = 0
 let longBad = false
 for (let frame = 0; frame < 2000; frame += 1) {
   kunpengEffect.step(longState, stepFrame(1))
-  if (!withinCanvas(longState.x, 280)) longBad = true
-  if (longState.x < previousX) wraps += 1
-  previousX = longState.x
+  if (!Number.isFinite(longState.travel) || longState.travel < 0 || longState.travel >= 1) longBad = true
+  if (longState.travel < previous) wraps += 1
+  previous = longState.travel
 }
-check(!longBad, 'a 2000-frame run wraps without leaving the canvas')
-check(wraps >= 2, 'the creature re-enters from the left when it swims off')
+check(!longBad, 'a 2000-frame run keeps travel in range')
+check(wraps >= 2, 'the creature re-enters from the left after crossing')
 
 // The frame loop is defensive about a canvas that measured zero.
 const degenerate = kunpengEffect.createState()
@@ -195,39 +194,14 @@ try {
   degenerateError = error
 }
 check(degenerateError === null, 'a zero-sized canvas / zero dt frame does not throw')
-check(Number.isFinite(degenerate.x) && Number.isFinite(degenerate.time), 'a degenerate frame keeps the state finite')
+check(Number.isFinite(degenerate.travel) && Number.isFinite(degenerate.time), 'a degenerate frame keeps the state finite')
 
-// --- 5. level -> size / lift / wing / ribbon (pure functions only) -----------
+// --- 5. the single 鲲鹏动效 keeps the standard bar track ----------------------
 
 const isNonDecreasing = (values) => values.every((value, index) => index === 0 || value >= values[index - 1] - 1e-9)
-const samples = [0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1]
-
-const { kunpengScaleFor, kunpengWingFor, kunpengLiftFor, kunpengAngleFor } = internals
-
-const scales = samples.map(kunpengScaleFor)
-check(scales.every(Number.isFinite), 'kunpengScaleFor is finite across the range')
-check(isNonDecreasing(scales), 'a higher level never shrinks the body')
-check(scales[scales.length - 1] > scales[0], 'max is bigger than off')
-
-const lifts = samples.map(kunpengLiftFor)
-check(lifts.every(Number.isFinite), 'kunpengLiftFor is finite across the range')
-check(isNonDecreasing(lifts), 'a higher level never lowers the creature')
-check(lifts[lifts.length - 1] - lifts[0] >= 12, 'max lifts the creature off the bar')
-
-const wings = samples.map(kunpengWingFor)
-check(isNonDecreasing(wings), 'a higher level never shrinks the wings')
-check(wings[0] < 0.01, 'off has no wings')
-check(wings[wings.length - 1] > 0.9, 'max has full wings')
-
-const angles = samples.map(kunpengAngleFor)
-check(angles.every(Number.isFinite), 'kunpengAngleFor is finite across the range')
-
-// The track is now the shared horizontal bar (particle-wave form) drawn by the
-// DOM, so the effect exposes no ribbon curve any more. What still has to hold is
-// that the panel never grows: layout.sky is clamped to zero for every effect.
-check(internals.effectiveSky(kunpengEffect) === 0, 'kunpeng cannot grow the panel')
 check(kunpengEffect.layout.track === 'bar', 'kunpeng uses the standard bar track')
-check(kunpengEffect.layout.spectrum === false, 'kunpeng hides the spectrum')
+check(kunpengEffect.layout.spectrum === false, 'kunpeng hides the spectrum band')
+check(kunpengEffect.layout.band === 0, 'kunpeng collapses the spectrum band')
 
 // --- 5c. sprite-strip playback ---------------------------------------------
 
@@ -291,40 +265,66 @@ function paintOnce(energy, extra = {}) {
 const paintedNumbers = (context) =>
   context.calls.flatMap(([, ...args]) => args.filter((value) => typeof value === 'number'))
 
+// A fake <img> so the art path can be exercised without a browser.
+function installFakeImage(frameWidth) {
+  sandbox.Image = function FakeImage() {
+    this.complete = true
+    this.naturalWidth = frameWidth * ART_FRAMES
+    this.naturalHeight = 168
+    this.src = ''
+  }
+}
+
+installFakeImage(270)
+const artFrame = (energy, extra = {}) => ({
+  energy, accent: 'rgb(34, 197, 94)', width: 284, height: 146, artBox: { top: 0, height: 84 }, ...extra,
+})
+
+function paintArt(energy, ageSeconds, extra = {}) {
+  const context = makeRecordingContext()
+  const state = kunpengEffect.createState()
+  for (let frame = 0; frame < Math.round(ageSeconds * 60); frame += 1) kunpengEffect.step(state, stepFrame(energy))
+  kunpengEffect.paint(context, state, artFrame(energy, extra))
+  return { context, state }
+}
+
 let hostPaint = null
 let hostPaintError = null
 try {
-  hostPaint = paintOnce(1)
+  hostPaint = paintArt(1, 0.5)
 } catch (error) {
   hostPaintError = error
 }
-check(hostPaintError === null, 'paint accepts the host frame shape (no trackY)')
-check(hostPaint !== null, 'paint returns after drawing')
+check(hostPaintError === null, 'paint accepts the host frame shape')
 const hostCalls = hostPaint.context.calls
-check(hostCalls.length > 20, 'paint draws the ribbon and the creature')
-const hostNumbers = paintedNumbers(hostPaint.context)
-check(hostNumbers.length > 0, 'paint emits numeric coordinates')
-check(hostNumbers.every(Number.isFinite), 'every painted coordinate is finite')
-const translates = hostCalls.filter(([name]) => name === 'translate')
-check(translates.length >= 1, 'the creature is drawn through a translate')
-check(
-  translates.every(([, x, y]) => Number.isFinite(x) && Number.isFinite(y)),
-  'every translate is finite'
-)
-check(
-  translates.some(([, x]) => withinCanvas(x, 280)),
-  'the creature is painted near the canvas'
-)
+const draws = hostCalls.filter(([name]) => name === 'drawImage')
+check(draws.length === 1, 'paint blits exactly one sprite frame')
+check(draws[0].length === 10, 'drawImage gets source and destination rects')
+check(paintedNumbers(hostPaint.context).every(Number.isFinite), 'every painted coordinate is finite')
 
-let explicitTrack = null
-let explicitTrackError = null
+// the sprite moves right as time passes
+const early = paintArt(1, 0.1).context.calls.filter(([name]) => name === 'drawImage')[0]
+const later = paintArt(1, 2.0).context.calls.filter(([name]) => name === 'drawImage')[0]
+check(later[6] > early[6], 'the sprite travels to the right over time')
+
+// the frame index advances (source x offset changes)
+const earlySrc = paintArt(1, 0.1).context.calls.filter(([name]) => name === 'drawImage')[0][1]
+const laterSrc = paintArt(1, 0.6).context.calls.filter(([name]) => name === 'drawImage')[0][1]
+check(laterSrc !== earlySrc, 'the animation frame advances over time')
+
+// missing art must not throw and must not draw
+delete sandbox.Image
+const emptyState = kunpengEffect.createState()
+for (let frame = 0; frame < 10; frame += 1) kunpengEffect.step(emptyState, stepFrame(0.5))
+const emptyContext = makeRecordingContext()
+let emptyError = null
 try {
-  explicitTrack = paintOnce(0, { trackY: 24 })
+  kunpengEffect.paint(emptyContext, emptyState, artFrame(0.5))
 } catch (error) {
-  explicitTrackError = error
+  emptyError = error
 }
-check(explicitTrackError === null, 'paint accepts an explicit trackY')
-check(paintedNumbers(explicitTrack.context).every(Number.isFinite), 'a low level paints only finite coordinates')
+check(emptyError === null, 'paint survives a missing art pack')
+check(emptyContext.calls.filter(([name]) => name === 'drawImage').length === 0, 'nothing is drawn without art')
 
 // --- report -----------------------------------------------------------------
 
