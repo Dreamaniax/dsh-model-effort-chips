@@ -198,7 +198,7 @@ const amplitude = (points) => {
   return Math.max(...ys.map((y) => Math.abs(y - mid)))
 }
 check(amplitude(wavePoints(1)) > amplitude(wavePoints(0)), 'higher energy grows the wave amplitude')
-check(wavePoints(0.5).split(' ').length === 51, 'wave samples the full width')
+check(wavePoints(0.5).split(' ').length === 76, 'wave samples the full width at 4px steps')
 
 // --- M5: alpha, stroke thickness, compact fallback ---------------------------
 
@@ -254,7 +254,7 @@ check(peak(wavePoints(1, 300, 26, 1, 0)) > peak(wavePoints(1, 300, 26, -1, 0)), 
 check(wavePoints(1, 300, 26, 0, 1.2) !== wavePoints(1, 300, 26, 0, 0), 'the crests travel with the phase')
 check(strokeWidthFor(1) > strokeWidthFor(0.3), 'thickness follows the level only')
 
-check(wavePoints(1, 300, 26, 0, 0).split(' ').length === 51, 'the wave keeps a stable sampling')
+check(wavePoints(1, 300, 26, 0, 0).split(' ').length === 76, 'the wave keeps a stable sampling')
 
 // --- rendering --------------------------------------------------------------
 
