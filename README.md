@@ -94,6 +94,19 @@ node scripts/uninstall.mjs                      # 只删链接与两条 profile 
 | 粒子波动特效 | `particle-wave` | 小球在鼓面上弹跳碰撞。off 为 0 颗，第二档 6 颗；档位越高数量越多、重力越大、初速越快、弹性越强，所以碰撞是物理算出来的，不是写死的概率 |
 | 鲲鹏动效（默认） | `kunpeng` | 直条轨道换成波浪缎带；小鲸鱼沿缎带游过，档位越高体形越大、逐渐长出翅膀，max 时振翅飞天 |
 
+### 切换动效
+
+面板标题「思考强度」右边有一个小按钮，显示当前特效名（现在是「鲲鹏动效」）。**点一下切到下一个特效**，
+选择记在浏览器 `localStorage` 的 `dsh-model-effort-chips:effect`，刷新、重启后保持。
+
+三种切换方式：
+
+| 方式 | 怎么做 | 适合 |
+| --- | --- | --- |
+| 面板按钮 | 点标题右侧的特效名 | 日常切换 |
+| 控制台 | `localStorage.setItem('dsh-model-effort-chips:effect','particle-wave')` 后刷新 | 想直接跳到指定特效 |
+| 改默认 | 把 `lib/client.js` 里的 `DEFAULT_EFFECT_ID` 改成 `'particle-wave'` | 想改所有人/新会话的默认值 |
+
 ### 轨道样式由特效声明
 
 特效对象新增一个 `layout` 字段，轨道长什么样由它自己决定，面板只管照着摆：

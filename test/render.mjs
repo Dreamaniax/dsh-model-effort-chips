@@ -115,6 +115,7 @@ for (const [label, levels] of [['four', levels4], ['five', levels5], ['one', [le
   const Slider = module.__internals.EffortSlider
   const html = render(React.createElement(Slider, { levels, effectiveEffort: levels[1]?.id, onChoose: () => {}, disabled: false }))
   check(html.includes('mec-track'), `${label}: track rendered`)
+  check(html.includes('data-dsh-mec="effect-switch"'), `${label}: effect switch rendered`)
   check(html.includes('mec-knob-svg'), `${label}: knobs rendered`)
   check(html.includes('data-dsh-mec="tick"'), `${label}: ticks rendered`)
   check(html.split('mec-label').length - 1 === levels.length, `${label}: one label per level`)

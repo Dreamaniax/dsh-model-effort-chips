@@ -261,6 +261,14 @@ check(resolveEffect('does-not-exist') === EFFECTS[0], 'an unknown id falls back 
 check(EFFECTS[0].name === '粒子波动特效', 'the current effect is named 粒子波动特效')
 check(typeof EFFECTS[0].step === 'function' && typeof EFFECTS[0].paint === 'function', 'an effect exposes step and paint')
 
+const { nextEffectId, readStoredEffectId, writeStoredEffectId, EFFECT_STORAGE_KEY } = module.__internals
+check(nextEffectId('kunpeng') === 'particle-wave', 'cycling from kunpeng goes to the particle effect')
+check(nextEffectId('particle-wave') === 'kunpeng', 'cycling wraps back to kunpeng')
+check(nextEffectId('does-not-exist') === EFFECTS[0].id, 'an unknown id cycles from the start')
+check(EFFECT_STORAGE_KEY === 'dsh-model-effort-chips:effect', 'the storage key is stable')
+check(readStoredEffectId() === null, 'no storage in node means no saved effect')
+check(writeStoredEffectId('particle-wave') === undefined, 'writing without storage does not throw')
+
 const pit = particleWaveEffect.createState()
 check(Array.isArray(pit.balls) && pit.balls.length === 0, 'a fresh effect state starts empty')
 for (let frame = 0; frame < 120; frame += 1) {
