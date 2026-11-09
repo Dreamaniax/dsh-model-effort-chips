@@ -115,13 +115,14 @@ check(
 check(typeof kunpengEffect.layout.spectrum === 'boolean', 'the layout declares whether it draws a spectrum')
 const barEffect = EFFECTS.find((effect) => effect.id === 'particle-wave')
 check(barEffect?.layout?.track === 'bar', 'the original effect keeps the flat bar track')
-// Panel standard: the particle-wave size is the ceiling, so every effect is
-// clamped to zero extra sky and the panel never grows.
+// Panel budget: the particle effect stays at the baseline, the pixel-art
+// variant is allowed a sky band above the bar, and anything greedy is clamped.
 const { effectiveSky, MAX_STAGE_SKY } = module.__internals
-check(MAX_STAGE_SKY === 0, 'the panel standard allows no extra sky')
-check(effectiveSky(kunpengEffect) === 0, 'kunpeng is clamped into the standard panel')
-check(effectiveSky(barEffect) === 0, 'the particle effect stays at the standard panel')
-check(effectiveSky({ layout: { sky: 200 } }) === 0, 'a greedy effect cannot grow the panel')
+check(MAX_STAGE_SKY > 0 && MAX_STAGE_SKY <= 96, 'the panel budget allows a bounded sky band')
+check(effectiveSky(barEffect) === 0, 'the particle effect stays at the baseline panel')
+check(effectiveSky(kunpengEffect) === 0, 'the procedural painter stays at the baseline panel')
+check(effectiveSky(internals.resolveEffect('kunpeng-art')) === 84, 'the art variant gets an 84px sky band')
+check(effectiveSky({ layout: { sky: 200 } }) === MAX_STAGE_SKY, 'a greedy effect is clamped to the budget')
 check(effectiveSky({ layout: { sky: Number.NaN } }) === 0, 'a broken sky value falls back to zero')
 
 // --- 2. lookup contract -----------------------------------------------------
