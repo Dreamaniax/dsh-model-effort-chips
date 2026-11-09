@@ -349,7 +349,7 @@ def main() -> None:
     )
     print(f"wrote {target} {target.stat().st_size / 1024:.0f} KB")
 
-    still = Image.new("RGB", (W, 190), CX)
+    still = Image.new("RGB", (S(W), S(190)), CX)
     draw = ImageDraw.Draw(still)
     draw.text((S(24), S(16)), "before  ·  one merged control", font=font(12), fill=MUTED)
     rounded(draw, box(24, 40, 330, 76), S(18), fill=CARD, outline=BORDER)
@@ -366,6 +366,7 @@ def main() -> None:
     draw.text((S(224), S(134)), "high", font=font(13), fill=color_at(0.66))
     chevron(draw, 262, 142, MUTED)
 
+    still = still.resize((W, 190), Image.LANCZOS)
     out = DOCS / "before-after.png"
     still.save(out, optimize=True)
     print(f"wrote {out} {out.stat().st_size / 1024:.0f} KB")
