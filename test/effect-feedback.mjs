@@ -75,9 +75,6 @@ function paintCalls(effect, state, frame) {
 const FEEDBACK = [
   ['ripple.js', 'rippleEffect', 'pools'],
   ['burst.js', 'burstEffect', 'pools'],
-  ['magnet-trail.js', 'magnetTrailEffect', 'continuous'],
-  ['micro-shake.js', 'microShakeEffect', 'envelope'],
-  ['spring-follow.js', 'springFollowEffect', 'spring'],
   ['ticks.js', 'ticksEffect', 'paint-only'],
 ]
 

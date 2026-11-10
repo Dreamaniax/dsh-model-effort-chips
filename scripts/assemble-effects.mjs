@@ -44,11 +44,15 @@ const EFFECTS = [
   { file: 'accretion-disk.js', name: 'accretionDiskEffect' },
   { file: 'sandstorm.js', name: 'sandstormEffect' },
   { file: 'fireflies.js', name: 'firefliesEffect' },
+  // ---- 伪 3D / 视差 ----
+  { file: 'starfield.js', name: 'starfieldEffect' },
+  { file: 'tunnel.js', name: 'tunnelEffect' },
+  { file: 'terrain.js', name: 'terrainEffect' },
+  { file: 'wirecube.js', name: 'wirecubeEffect' },
+  { file: 'parallax.js', name: 'parallaxEffect' },
+  { file: 'grid.js', name: 'gridEffect' },
   // ---- 交互反馈 ----
   { file: 'ripple.js', name: 'rippleEffect' },
-  { file: 'magnet-trail.js', name: 'magnetTrailEffect' },
-  { file: 'micro-shake.js', name: 'microShakeEffect' },
-  { file: 'spring-follow.js', name: 'springFollowEffect' },
   { file: 'burst.js', name: 'burstEffect' },
   { file: 'ticks.js', name: 'ticksEffect' },
   // ---- 材质与氛围 ----
