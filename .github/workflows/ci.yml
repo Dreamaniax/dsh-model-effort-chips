@@ -50,13 +50,13 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $home = Join-Path $env:RUNNER_TEMP 'mec-launcher-home'
-          New-Item -ItemType Directory -Force (Join-Path $home 'profiles\desktop') | Out-Null
+          $mecHome = Join-Path $env:RUNNER_TEMP 'mec-launcher-home'
+          New-Item -ItemType Directory -Force (Join-Path $mecHome 'profiles\desktop') | Out-Null
           '{"name":"dsh-profile-desktop","private":true,"dependencies":{},"dsh":{"profile":{"bundles":["@deepseek-ai/dsh-base"]}}}' |
-            Set-Content -LiteralPath (Join-Path $home 'profiles\desktop\package.json') -Encoding UTF8
-          & .\install.cmd --home "$home" --profile desktop
+            Set-Content -LiteralPath (Join-Path $mecHome 'profiles\desktop\package.json') -Encoding UTF8
+          & .\install.cmd --home "$mecHome" --profile desktop
           if ($LASTEXITCODE -ne 0) { throw "install.cmd failed with exit code $LASTEXITCODE" }
-          $link = Join-Path $home 'profiles\desktop\node_modules\dsh-model-effort-chips'
+          $link = Join-Path $mecHome 'profiles\desktop\node_modules\dsh-model-effort-chips'
           if (-not (Test-Path -LiteralPath (Join-Path $link 'lib\client.js'))) {
             throw 'install.cmd did not project lib/client.js into the profile'
           }
@@ -64,7 +64,7 @@ jobs:
           if (-not $item.Attributes.HasFlag([IO.FileAttributes]::ReparsePoint)) {
             throw 'install.cmd did not create a junction/reparse point'
           }
-          & .\uninstall.cmd --home "$home" --profile desktop
+          & .\uninstall.cmd --home "$mecHome" --profile desktop
           if ($LASTEXITCODE -ne 0) { throw "uninstall.cmd failed with exit code $LASTEXITCODE" }
           if (Test-Path -LiteralPath $link) { throw 'uninstall.cmd left the projection behind' }
           Write-Host 'Windows launcher round-trip OK'
