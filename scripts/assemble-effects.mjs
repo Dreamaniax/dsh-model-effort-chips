@@ -44,6 +44,13 @@ const EFFECTS = [
   { file: 'accretion-disk.js', name: 'accretionDiskEffect' },
   { file: 'sandstorm.js', name: 'sandstormEffect' },
   { file: 'fireflies.js', name: 'firefliesEffect' },
+  // ---- 生命 / 角色 ----
+  { file: 'jellyfish.js', name: 'jellyfishEffect' },
+  { file: 'vine.js', name: 'vineEffect' },
+  { file: 'microbe.js', name: 'microbeEffect' },
+  { file: 'pupil.js', name: 'pupilEffect' },
+  { file: 'snake.js', name: 'snakeEffect' },
+  { file: 'bloom.js', name: 'bloomEffect' },
   // ---- 形变与过渡 ----
   { file: 'metaballs.js', name: 'metaballsEffect' },
   { file: 'squash.js', name: 'squashEffect' },
