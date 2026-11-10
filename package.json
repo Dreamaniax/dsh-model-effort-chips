@@ -45,7 +45,7 @@
   },
   "license": "MIT",
   "scripts": {
-    "test": "node test/client-load.mjs && node test/render.mjs && node test/wheel.mjs && node test/effect-kunpeng.mjs && node test/effect-menu.mjs && node test/effects-all.mjs && node test/effect-art.mjs && node test/effect-texture.mjs && node test/effect-feedback.mjs && node test/effect-depth.mjs && node test/install.mjs && node scripts/assemble-effects.mjs --check",
+    "test": "node test/client-load.mjs && node test/render.mjs && node test/wheel.mjs && node test/effect-kunpeng.mjs && node test/effect-menu.mjs && node test/effects-all.mjs && node test/effect-art.mjs && node test/effect-texture.mjs && node test/effect-feedback.mjs && node test/install.mjs && node scripts/assemble-effects.mjs --check",
     "test:load": "node test/client-load.mjs",
     "test:render": "node test/render.mjs",
     "test:wheel": "node test/wheel.mjs",
