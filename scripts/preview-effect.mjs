@@ -285,9 +285,10 @@ if (effect === undefined) throw new Error(`unknown effect ${effectId}`)
 
 const layout = effect.layout ?? { sky: 0, track: 'bar', spectrum: true }
 const sky = internals.effectiveSky(effect)
-// The canvas follows whatever sky the effect asked for, exactly like the host.
-const HEIGHT = sky + 30 + 58
-const band = { top: sky, height: 30 }
+const bandHeight = Math.max(0, Number(layout.band ?? 30))
+// The canvas follows whatever sky/band the effect asked for, exactly like the host.
+const HEIGHT = sky + bandHeight + 58
+const band = { top: sky, height: bandHeight }
 const trackY = sky + 30 + 16
 
 const context = new Context()
