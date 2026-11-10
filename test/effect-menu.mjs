@@ -142,26 +142,38 @@ await act(async () => {
   switcher.dispatchEvent(new window.MouseEvent('click', { bubbles: true }))
   await sleep(20)
 })
-const rows = options()
-check(rows.length >= 2, 'the menu lists every registered effect')
-const menuPanel = window.document.querySelector('[data-dsh-mec="effect-menu"]')
-check(menuPanel !== null, 'the menu is portalled with its own marker')
-check(menuPanel.getAttribute('role') === 'listbox', 'the menu is a listbox')
-check(menuPanel.getAttribute('aria-label') === '动效', 'the menu has an accessible name')
-const menuStyle = menuPanel.getAttribute('style') ?? ''
-check(/left: \d+px/.test(menuStyle), 'the menu is positioned horizontally')
-check(/top: \d+px/.test(menuStyle) || /bottom: \d+px/.test(menuStyle), 'the menu is anchored above or below the switcher')
-check(switcher.getAttribute('aria-expanded') === 'true', 'the menu reports itself open')
+const categories = () => [...window.document.querySelectorAll('[data-effect-category]')]
+check(options().length === 0, 'the first level lists categories, not effects')
+check(categories().length >= 2, 'every non-empty category is offered')
+check(
+  categories().map((row) => row.dataset.effectCategory).includes('physics'),
+  'the physics effects are grouped under 物理仿真'
+)
 
-const selected = rows.filter((row) => row.getAttribute('aria-selected') === 'true')
-check(selected.length === 1, 'exactly one effect is marked active')
-check(selected[0].dataset.effectOption === 'kunpeng', 'the default effect is the active one')
+// open 物理仿真 and check the four physics effects are inside it
+const physics = categories().find((row) => row.dataset.effectCategory === 'physics')
+await act(async () => {
+  physics.dispatchEvent(new window.MouseEvent('click', { bubbles: true }))
+  await sleep(20)
+})
+check(options().length === 4, '物理仿真 holds the four physics effects')
+check(window.document.querySelector('[data-effect-back]') !== null, 'a back row returns to the categories')
 
-// pick the particle effect
-const particle = rows.find((row) => row.dataset.effectOption === 'particle-wave')
-check(particle !== undefined, 'the particle effect is offered')
-// A real click is pointerdown -> pointerup -> click; the panel's outside-click
-// listener runs on the capture phase and used to tear the menu down first.
+// back to the categories
+await act(async () => {
+  window.document.querySelector('[data-effect-back]').dispatchEvent(new window.MouseEvent('click', { bubbles: true }))
+  await sleep(20)
+})
+check(options().length === 0 && categories().length >= 2, 'the back row restores the category list')
+
+// choose from 经典
+const classic = categories().find((row) => row.dataset.effectCategory === 'classic')
+await act(async () => {
+  classic.dispatchEvent(new window.MouseEvent('click', { bubbles: true }))
+  await sleep(20)
+})
+const particle = options().find((row) => row.dataset.effectOption === 'particle-wave')
+check(particle !== undefined, 'the particle effect is offered under 经典')
 await act(async () => {
   particle.dispatchEvent(new window.MouseEvent('pointerdown', { bubbles: true }))
   particle.dispatchEvent(new window.MouseEvent('click', { bubbles: true }))
@@ -177,7 +189,7 @@ await act(async () => {
   window.document.querySelector('[data-dsh-mec="effect-switch"]').dispatchEvent(new window.MouseEvent('click', { bubbles: true }))
   await sleep(20)
 })
-check(options().length >= 2, 'the menu reopens')
+check(categories().length >= 2, 'the menu reopens at the category level')
 await act(async () => {
   window.document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
   await sleep(20)
