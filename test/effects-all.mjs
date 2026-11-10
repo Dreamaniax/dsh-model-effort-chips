@@ -124,8 +124,16 @@ function assertFinite(value, path, depth = 0) {
 /** Rough allocation guard: how big the arrays in state get. */
 function largestArray(value, depth = 0) {
   if (depth > 3 || value === null || typeof value !== 'object') return 0
-  if (Array.isArray(value)) return Math.max(value.length, ...value.slice(0, 8).map((item) => largestArray(item, depth + 1)))
-  return Math.max(0, ...Object.keys(value).map((key) => largestArray(value[key], depth + 1)))
+  if (Array.isArray(value)) {
+    let biggest = value.length
+    for (let index = 0; index < Math.min(value.length, 8); index += 1) {
+      biggest = Math.max(biggest, largestArray(value[index], depth + 1))
+    }
+    return biggest
+  }
+  let biggest = 0
+  for (const key of Object.keys(value)) biggest = Math.max(biggest, largestArray(value[key], depth + 1))
+  return biggest
 }
 
 // --- 1. registry ------------------------------------------------------------
