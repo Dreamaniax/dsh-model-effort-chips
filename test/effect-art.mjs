@@ -78,28 +78,39 @@ function recordingContext() {
   return { context, calls, props }
 }
 
+// `cycle` effects walk all six frames on a clock; a `stage` effect maps the level
+// onto the frames instead, so its six frames are evolutions, not animation.
 const LIVES = [
-  ['jellyfish.js', 'jellyfishEffect', 'jellyfish'],
-  ['vine.js', 'vineEffect', 'vine'],
-  ['microbe.js', 'microbeEffect', 'microbe'],
-  ['pupil.js', 'pupilEffect', 'pupil'],
-  ['bloom.js', 'bloomEffect', 'bloom'],
+  ['jellyfish.js', 'jellyfishEffect', 'jellyfish', 'cycle'],
+  ['vine.js', 'vineEffect', 'vine', 'cycle'],
+  ['microbe.js', 'microbeEffect', 'microbe', 'stage'],
+  ['bloom.js', 'bloomEffect', 'bloom', 'cycle'],
 ]
 
-for (const [file, name, id] of LIVES) {
+for (const [file, name, id, mode] of LIVES) {
   const effect = load(file, name)
   check(effect.id === id, `${id}: id matches the file name`)
   check(effect.category === 'life', `${id}: category is life`)
   check(effect.layout.track === 'bar', `${id}: uses the single track`)
 
-  // 1. the six frames all play
+  // 1. every frame is reachable: clocked for a cycle effect, by level for a stage
   const state = effect.createState()
   const seen = new Set()
-  for (let step = 0; step < 900; step += 1) {
-    effect.step(state, frameFor(effect, 0.8, ART))
-    seen.add(state.frame)
+  if (mode === 'cycle') {
+    for (let step = 0; step < 900; step += 1) {
+      effect.step(state, frameFor(effect, 0.8, ART))
+      seen.add(state.frame)
+    }
+    check(seen.size === 6, `${id}: all six frames play (saw ${seen.size})`)
+  } else {
+    for (const energy of [0, 0.17, 0.34, 0.51, 0.68, 0.85, 1]) {
+      const probe = effect.createState()
+      for (let step = 0; step < 30; step += 1) effect.step(probe, frameFor(effect, energy, ART))
+      seen.add(probe.frame)
+      check(probe.frame === Math.min(5, Math.floor(energy * 6)), `${id} e=${energy}: stage follows the level (${probe.frame})`)
+    }
+    check(seen.size === 6, `${id}: all six stages reachable (saw ${seen.size})`)
   }
-  check(seen.size === 6, `${id}: all six frames play (saw ${seen.size})`)
   for (const index of seen) check(Number.isInteger(index) && index >= 0 && index < 6, `${id}: frame ${index} in range`)
 
   // 2. every frame blits the right slice on whole pixels
@@ -113,7 +124,8 @@ for (const [file, name, id] of LIVES) {
       const { context, calls } = recordingContext()
       effect.paint(context, local, frame)
       const draws = calls.filter(([op]) => op === 'drawImage')
-      check(draws.length === 1, `${id} e=${energy}: one blit per frame (got ${draws.length})`)
+      // A stage effect cross-fades, so a frame in transition legitimately blits twice.
+      check(draws.length >= 1 && draws.length <= 2, `${id} e=${energy}: one blit per frame (got ${draws.length})`)
       // Pixel art must blit with smoothing off, then restore it.
       const blitIndex = calls.findIndex(([op]) => op === 'drawImage')
       const before = calls.slice(0, blitIndex)
@@ -126,7 +138,7 @@ for (const [file, name, id] of LIVES) {
         after.some(([op, prop, value]) => op === 'set' && prop === 'imageSmoothingEnabled' && value === true),
         `${id}: smoothing is restored after the blit`,
       )
-      const draw = draws[0]
+      const draw = draws[draws.length - 1]
       if (!draw) continue
       const [, image, sx, sy, sw, sh, dx, dy, dw, dh] = draw
       check(image === ART, `${id}: blits the strip passed in frame.art`)

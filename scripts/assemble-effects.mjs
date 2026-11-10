@@ -48,7 +48,6 @@ const EFFECTS = [
   { file: 'jellyfish.js', name: 'jellyfishEffect' },
   { file: 'vine.js', name: 'vineEffect' },
   { file: 'microbe.js', name: 'microbeEffect' },
-  { file: 'pupil.js', name: 'pupilEffect' },
   { file: 'bloom.js', name: 'bloomEffect' },
   // ---- 形变与过渡 ----
   { file: 'metaballs.js', name: 'metaballsEffect' },
