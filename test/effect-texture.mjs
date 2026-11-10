@@ -104,6 +104,10 @@ for (const [file, name, id] of TEXTURES) {
       const { context, calls } = recordingContext(stats)
       effect.paint(context, state, frame)
       check(!calls.some(([op]) => op === 'setTransform'), `${id}: never resets the host transform`)
+      const saves = calls.filter(([op]) => op === 'save').length
+      const restores = calls.filter(([op]) => op === 'restore').length
+      check(saves === restores, `${id}: save/restore balanced (${saves}/${restores})`)
+      check(calls[calls.length - 1][0] === 'restore' || restores >= saves, `${id}: leaves the host transform restored`)
       const fills = calls.filter(([op]) => op === 'fillRect')
       for (const [, x, y, w, h] of fills) {
         check(
@@ -112,9 +116,23 @@ for (const [file, name, id] of TEXTURES) {
         )
       }
       if (step === 239) {
-        const patternFills = fills.length
-        check(patternFills > 0, `${id} e=${energy}: paints the tiled swatch`)
-        check(fills[0][4] >= box - 0.5 || fills[0][2] <= box, `${id} e=${energy}: texture covers the box`)
+        check(fills.length > 0, `${id} e=${energy}: paints the tiled swatch`)
+        // Replay the transform the effect applied: translate(-ox,-oy) then scale(s).
+        const translate = calls.find(([op]) => op === 'translate')
+        const scaleCall = calls.find(([op]) => op === 'scale')
+        if (translate && scaleCall) {
+          const [, tx, ty] = translate
+          const [, sx, sy] = scaleCall
+          const fill = fills[0]
+          const left = fill[1] * sx + tx
+          const top = fill[2] * sy + ty
+          const right = (fill[1] + fill[3]) * sx + tx
+          const bottom = (fill[2] + fill[4]) * sy + ty
+          check(left <= 0.5 && right >= 284 - 0.5, `${id} e=${energy}: tiles across the panel (${left.toFixed(0)}..${right.toFixed(0)})`)
+          check(top <= (effect.layout.sky ?? 0) + 0.5 && bottom >= box - 0.5, `${id} e=${energy}: tiles down the box (${top.toFixed(0)}..${bottom.toFixed(0)} of ${box})`)
+        } else {
+          check(false, `${id} e=${energy}: paints through a translate/scale`)
+        }
       }
     }
     // One pattern per image, no matter how many frames were painted.
