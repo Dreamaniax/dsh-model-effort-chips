@@ -135,7 +135,7 @@ async function discoverHost() {
   let otherDshGraph = null
   for (const port of candidates) {
     const base = `http://127.0.0.1:${port}`
-    const graph = await readGraph(base, 800)
+    const graph = await readGraph(base, 1500)
     if (graph === null || !Array.isArray(graph.entries)) continue
     if (graph.entries.some((entry) => entry.id === PKG)) return { base, graph }
     otherDshGraph ??= { base, graph }
@@ -169,9 +169,10 @@ async function main() {
 
   const paths = profilePaths(options)
   const { manifestPath, linkPath, profileDir, profileName, dshHome } = paths
-  const usesDefaultHome =
-    options.home === null &&
-    !(typeof process.env.DSH_HOME === 'string' && process.env.DSH_HOME.trim() !== '')
+  // Auto-discovery is only meaningful for the default home. DSH itself may
+  // export DSH_HOME pointing at that same default, so compare the resolved
+  // path rather than whether the variable is set.
+  const usesDefaultHome = samePath(dshHome, join(homedir(), '.dsh'))
   console.log(`[verify] package: ${PKG}`)
   console.log(`[verify] home:    ${dshHome}`)
   console.log(`[verify] profile: ${profileName} (${profileDir})`)
