@@ -44,6 +44,13 @@ const EFFECTS = [
   { file: 'accretion-disk.js', name: 'accretionDiskEffect' },
   { file: 'sandstorm.js', name: 'sandstormEffect' },
   { file: 'fireflies.js', name: 'firefliesEffect' },
+  // ---- 光与色 ----
+  { file: 'glow-breath.js', name: 'glowBreathEffect' },
+  { file: 'laser-scan.js', name: 'laserScanEffect' },
+  { file: 'prism.js', name: 'prismEffect' },
+  { file: 'aurora.js', name: 'auroraEffect' },
+  { file: 'afterglow.js', name: 'afterglowEffect' },
+  { file: 'embers.js', name: 'embersEffect' },
   // ---- 波形信号 ----
   { file: 'harmonics.js', name: 'harmonicsEffect' },
   { file: 'chirp.js', name: 'chirpEffect' },
