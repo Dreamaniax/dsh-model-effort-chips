@@ -75,19 +75,30 @@ function paint(effect, state, frame) {
   return { calls, nonFinite }
 }
 
+// The host resolves art by effect id through this map (client.js DEPTH_ART), so a
+// typo here means an effect silently falls back to vectors in production.
 const DEPTH = [
-  ['starfield.js', 'starfieldEffect'],
-  ['tunnel.js', 'tunnelEffect'],
-  ['terrain.js', 'terrainEffect'],
-  ['wirecube.js', 'wirecubeEffect'],
-  ['parallax.js', 'parallaxEffect'],
-  ['grid.js', 'gridEffect'],
+  ['starfield.js', 'starfieldEffect', 'star'],
+  ['tunnel.js', 'tunnelEffect', 'tunnel'],
+  ['terrain.js', 'terrainEffect', 'ridge'],
+  ['wirecube.js', 'wirecubeEffect', 'cube'],
+  ['parallax.js', 'parallaxEffect', 'ridge'],
+  ['grid.js', 'gridEffect', 'grid'],
 ]
 
-for (const [file, name] of DEPTH) {
+const HOST_MAP = (() => {
+  const source = readFileSync(resolve(ROOT, 'lib/client.js'), 'utf8')
+  const block = source.match(/const DEPTH_ART = new Map\(\[([\s\S]*?)\]\)/)
+  if (!block) return new Map()
+  const pairs = [...block[1].matchAll(/\['([^']+)', '([^']+)'\]/g)]
+  return new Map(pairs.map(([, key, value]) => [key, value]))
+})()
+
+for (const [file, name, asset] of DEPTH) {
   const effect = load(file, name)
   const id = effect.id
   check(id === file.replace('.js', ''), `${id}: id matches the file name`)
+  check(HOST_MAP.get(id) === asset, `${id}: the host maps it to ${asset}.png (got ${HOST_MAP.get(id)})`)
   check(effect.category === 'depth', `${id}: category is depth`)
   const box = (effect.layout.sky ?? 0) + (effect.layout.band ?? 0)
 
@@ -112,12 +123,29 @@ for (const [file, name] of DEPTH) {
           else [, , dx, dy, dw, dh] = call
           check(dw > 0 && dh > 0, `${id}: sprite size stays positive (${dw}x${dh})`)
           check(dw <= width * 3 && dh <= box * 3, `${id}: sprite size stays sane (${dw}x${dh})`)
-          check(dy + dh > -4 && dy < box + 4, `${id}: sprite is somewhere near its band`)
+          const clipped = calls.some(([op]) => op === 'clip')
+          check(
+            clipped || (dy >= -4 && dy + dh <= box + 4),
+            `${id}: without a clip the sprite stays in its band (${dy}..${dy + dh} of ${box})`,
+          )
         }
       }
       // Stars that fall behind the camera must not freeze the frame.
       check(Number.isFinite(state.time), `${id}: clock stays finite`)
     }
+  }
+
+  // Frame-rate independence: two seconds of motion at 60fps and at 30fps must
+  // reach the same animation clock.
+  {
+    const clockAt = (fps) => {
+      const probe = effect.createState()
+      for (let step = 0; step < fps * 2; step += 1) effect.step(probe, { ...frameFor(effect, 0.6, ART), dt: 1 / fps })
+      return probe.time
+    }
+    const fast = clockAt(60)
+    const slow = clockAt(30)
+    check(Math.abs(fast - slow) < 0.05, `${id}: animation clock is frame-rate independent (${fast.toFixed(2)} vs ${slow.toFixed(2)})`)
   }
 
   // No art: the stand-in paints.
