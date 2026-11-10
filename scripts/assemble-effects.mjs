@@ -26,6 +26,14 @@ const EFFECTS = [
   { file: 'spring-mesh.js', name: 'springMeshEffect' },
   { file: 'gyroscope.js', name: 'gyroscopeEffect' },
   { file: 'dominoes.js', name: 'dominoesEffect' },
+  // ---- 粒子场 / 群集 ----
+  { file: 'flow-field.js', name: 'flowFieldEffect' },
+  { file: 'boids.js', name: 'boidsEffect' },
+  { file: 'accretion-disk.js', name: 'accretionDiskEffect' },
+  { file: 'sandstorm.js', name: 'sandstormEffect' },
+  { file: 'fireflies.js', name: 'firefliesEffect' },
+  { file: 'particle-morph.js', name: 'particleMorphEffect' },
+  { file: 'iron-filings.js', name: 'ironFilingsEffect' },
   // ---- 波形信号 ----
   { file: 'harmonics.js', name: 'harmonicsEffect' },
   { file: 'chirp.js', name: 'chirpEffect' },
