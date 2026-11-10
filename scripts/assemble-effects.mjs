@@ -44,6 +44,13 @@ const EFFECTS = [
   { file: 'accretion-disk.js', name: 'accretionDiskEffect' },
   { file: 'sandstorm.js', name: 'sandstormEffect' },
   { file: 'fireflies.js', name: 'firefliesEffect' },
+  // ---- 交互反馈 ----
+  { file: 'ripple.js', name: 'rippleEffect' },
+  { file: 'magnet-trail.js', name: 'magnetTrailEffect' },
+  { file: 'micro-shake.js', name: 'microShakeEffect' },
+  { file: 'spring-follow.js', name: 'springFollowEffect' },
+  { file: 'burst.js', name: 'burstEffect' },
+  { file: 'ticks.js', name: 'ticksEffect' },
   // ---- 材质与氛围 ----
   { file: 'film-grain.js', name: 'filmGrainEffect' },
   { file: 'nebula.js', name: 'nebulaEffect' },
