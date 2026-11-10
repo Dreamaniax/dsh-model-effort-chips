@@ -22,8 +22,6 @@ const energy = Number(process.argv[3] ?? '0.66')
 const outPath = process.argv[4] ?? '/tmp/effect.svg'
 
 const WIDTH = 284
-// The panel standard: band 30 + rail 58, no extra sky is ever granted.
-const HEIGHT = 92
 
 // --- minimal 2D context recorder -------------------------------------------
 let nextGradientId = 0
@@ -160,6 +158,23 @@ class Context {
     this.current = center
   }
 
+  rect(x, y, w, h) {
+    const corners = [
+      apply(this.state.transform, x, y),
+      apply(this.state.transform, x + w, y),
+      apply(this.state.transform, x + w, y + h),
+      apply(this.state.transform, x, y + h),
+    ]
+    this.path.push(`M ${corners[0][0].toFixed(2)} ${corners[0][1].toFixed(2)}`)
+    for (let index = 1; index < corners.length; index += 1) {
+      this.path.push(`L ${corners[index][0].toFixed(2)} ${corners[index][1].toFixed(2)}`)
+    }
+    this.path.push('Z')
+    this.current = corners[0]
+  }
+
+  clip() {}
+
   arc(x, y, r, start, end) {
     const center = apply(this.state.transform, x, y)
     const radius = r * Math.abs(this.state.transform.a)
@@ -270,6 +285,8 @@ if (effect === undefined) throw new Error(`unknown effect ${effectId}`)
 
 const layout = effect.layout ?? { sky: 0, track: 'bar', spectrum: true }
 const sky = internals.effectiveSky(effect)
+// The canvas follows whatever sky the effect asked for, exactly like the host.
+const HEIGHT = sky + 30 + 58
 const band = { top: sky, height: 30 }
 const trackY = sky + 30 + 16
 

@@ -26,6 +26,13 @@ const EFFECTS = [
   { file: 'spring-mesh.js', name: 'springMeshEffect' },
   { file: 'gyroscope.js', name: 'gyroscopeEffect' },
   { file: 'dominoes.js', name: 'dominoesEffect' },
+  // ---- 几何线条 ----
+  { file: 'spirograph.js', name: 'spirographEffect' },
+  { file: 'fourier-epicycles.js', name: 'fourierEpicyclesEffect' },
+  { file: 'fractal-tree.js', name: 'fractalTreeEffect' },
+  { file: 'moire.js', name: 'moireEffect' },
+  { file: 'spiral.js', name: 'spiralEffect' },
+  { file: 'hilbert.js', name: 'hilbertEffect' },
   // ---- 粒子场 / 群集 ----
   { file: 'flow-field.js', name: 'flowFieldEffect' },
   { file: 'boids.js', name: 'boidsEffect' },
