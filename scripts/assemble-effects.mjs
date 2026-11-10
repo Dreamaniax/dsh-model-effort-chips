@@ -23,11 +23,8 @@ const clientPath = join(here, 'lib', 'client.js')
 /** Declaration order in the menu, and the variable each file must export. */
 const EFFECTS = [
   { file: 'double-pendulum.js', name: 'doublePendulumEffect' },
-  { file: 'hourglass.js', name: 'hourglassEffect' },
   { file: 'spring-mesh.js', name: 'springMeshEffect' },
-  { file: 'verlet-rope.js', name: 'verletRopeEffect' },
   { file: 'gyroscope.js', name: 'gyroscopeEffect' },
-  { file: 'magnetic-orbits.js', name: 'magneticOrbitsEffect' },
   { file: 'dominoes.js', name: 'dominoesEffect' },
 ]
 
