@@ -2,49 +2,116 @@
 /**
  * Uninstall dsh-model-effort-chips from a DSH profile.
  *
- * Removes the `link:` dependency, the `dsh.profile.bundles` entry, and the
- * node_modules symlink. Only the link is deleted — this checkout is left
- * untouched.
+ * Removes the `link:` dependency, every `dsh.profile.bundles` occurrence, and
+ * the node_modules projection (symlink or Windows junction). This checkout is
+ * never touched. The pristine manifest backup the installer made is kept.
  *
- * Usage: node scripts/uninstall.mjs [--profile desktop] [--dry-run]
+ * Usage:
+ *   node scripts/uninstall.mjs [--profile desktop] [--home <dsh-home>] [--dry-run]
+ *
+ * Environment: DSH_HOME overrides the default ~/.dsh home.
  */
 
-import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
-import { homedir } from 'node:os'
-import { dirname, join } from 'node:path'
+import { existsSync, readFileSync } from 'node:fs'
+import { dirname, join, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const PKG = 'dsh-model-effort-chips'
+import {
+  PKG,
+  backupManifest,
+  parseCommonArgs,
+  pathKind,
+  profilePaths,
+  readJson,
+  removeProjection,
+  restartHint,
+  serializeManifest,
+  writeFileAtomic,
+} from './lib/profile.mjs'
 
-const args = process.argv.slice(2)
-const dryRun = args.includes('--dry-run')
-const profileFlag = args.indexOf('--profile')
-const profileName = profileFlag >= 0 ? args[profileFlag + 1] : 'desktop'
-const profileDir = join(homedir(), '.dsh', 'profiles', profileName)
-const pkgPath = join(profileDir, 'package.json')
-const linkPath = join(profileDir, 'node_modules', PKG)
+const here = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 
-if (!existsSync(pkgPath)) {
-  console.error(`[uninstall] profile package.json not found: ${pkgPath}`)
+const USAGE = `Uninstall ${PKG} from a DSH profile.
+
+Usage: node scripts/uninstall.mjs [--profile desktop] [--home <dsh-home>] [--dry-run]
+
+  --profile <name>  profile to uninstall from (default: desktop)
+  --home <dir>      DSH home (default: $DSH_HOME or ~/.dsh)
+  --dry-run         print the manifest changes without writing anything
+  -h, --help        show this help
+`
+
+function fail(message) {
+  console.error(`\n[uninstall] FAILED: ${message}\n`)
   process.exit(1)
 }
 
-const manifest = JSON.parse(readFileSync(pkgPath, 'utf8'))
-delete manifest.dependencies?.[PKG]
-if (Array.isArray(manifest.dsh?.profile?.bundles)) {
-  manifest.dsh.profile.bundles = manifest.dsh.profile.bundles.filter((entry) => entry !== PKG)
+async function main() {
+  let options
+  try {
+    options = parseCommonArgs(process.argv.slice(2))
+  } catch (error) {
+    fail(error.message)
+  }
+  if (options.help) {
+    console.log(USAGE)
+    return
+  }
+  if (options.rest.length > 0) fail(`unknown argument(s): ${options.rest.join(' ')} (see --help)`)
+
+  const paths = profilePaths(options)
+  const { manifestPath, linkPath, profileDir, profileName } = paths
+  console.log(`[uninstall] package: ${PKG}`)
+  console.log(`[uninstall] profile: ${profileName} (${profileDir})`)
+
+  if (!existsSync(manifestPath)) fail(`profile manifest not found: ${manifestPath}`)
+
+  const before = readFileSync(manifestPath, 'utf8')
+  const manifest = JSON.parse(before)
+  const hadDependency = Object.hasOwn(manifest.dependencies ?? {}, PKG)
+  delete manifest.dependencies?.[PKG]
+  if (Array.isArray(manifest.dsh?.profile?.bundles)) {
+    manifest.dsh.profile.bundles = manifest.dsh.profile.bundles.filter((entry) => entry !== PKG)
+  }
+  const next = serializeManifest(manifest)
+  const kind = pathKind(linkPath)
+
+  if (options.dryRun) {
+    console.log('\n[uninstall] dry run — would write:')
+    console.log(next)
+    console.log(`[uninstall] dry run — node_modules entry is ${kind}; would remove it`)
+    return
+  }
+
+  if (before !== next) {
+    const backupPath = backupManifest(manifestPath)
+    console.log(`[uninstall] backup:  ${backupPath}`)
+    await writeFileAtomic(manifestPath, next)
+    console.log(`[uninstall] manifest: dependency ${hadDependency ? 'removed' : 'was already absent'}, bundle entry removed`)
+  } else {
+    console.log('[uninstall] manifest: already clean')
+  }
+
+  try {
+    const removed = removeProjection(linkPath)
+    console.log(`[uninstall] node_modules: ${removed ? 'projection removed' : 'nothing to remove'} (${kind})`)
+  } catch (error) {
+    fail(
+      `could not remove ${linkPath}: ${error?.message ?? error}\n` +
+        '  Close DeepSeek Harness, then delete that entry by hand and retry.',
+    )
+  }
+
+  // The uninstall is only complete when the on-disk manifest agrees.
+  const check = readJson(manifestPath)
+  if (check.dependencies?.[PKG] !== undefined) fail('dependency entry still present after write')
+  if (Array.isArray(check.dsh?.profile?.bundles) && check.dsh.profile.bundles.includes(PKG)) {
+    fail('bundle entry still present after write')
+  }
+  if (pathKind(linkPath) !== 'missing') fail(`node_modules entry still exists: ${linkPath}`)
+
+  console.log('\n[uninstall] OK — removed from the profile; this checkout was left untouched.')
+  console.log(`[uninstall] ${restartHint()}`)
 }
 
-if (dryRun) {
-  console.log('[uninstall] dry run — would write:')
-  console.log(`${JSON.stringify(manifest, null, 2)}\n`)
-  process.exit(0)
-}
-
-writeFileSync(pkgPath, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8')
-try {
-  rmSync(linkPath, { recursive: true, force: true })
-} catch {
-  // already gone
-}
-
-console.log(`[uninstall] OK — ${PKG} removed from ${profileName}; restart DeepSeek Harness Desktop.`)
+await main()

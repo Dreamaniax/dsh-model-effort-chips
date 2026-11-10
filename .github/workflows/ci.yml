@@ -1,0 +1,70 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: node ${{ matrix.node }} / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            node: 20
+          - os: ubuntu-latest
+            node: 22
+          - os: macos-latest
+            node: 22
+          - os: windows-latest
+            node: 22
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - name: Install test dependencies
+        run: npm ci
+
+      - name: Run the client, effect and installer suites
+        run: npm test
+
+      - name: Windows launcher round-trip
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $home = Join-Path $env:RUNNER_TEMP 'mec-launcher-home'
+          New-Item -ItemType Directory -Force (Join-Path $home 'profiles\desktop') | Out-Null
+          '{"name":"dsh-profile-desktop","private":true,"dependencies":{},"dsh":{"profile":{"bundles":["@deepseek-ai/dsh-base"]}}}' |
+            Set-Content -LiteralPath (Join-Path $home 'profiles\desktop\package.json') -Encoding UTF8
+          & .\install.cmd --home "$home" --profile desktop
+          if ($LASTEXITCODE -ne 0) { throw "install.cmd failed with exit code $LASTEXITCODE" }
+          $link = Join-Path $home 'profiles\desktop\node_modules\dsh-model-effort-chips'
+          if (-not (Test-Path -LiteralPath (Join-Path $link 'lib\client.js'))) {
+            throw 'install.cmd did not project lib/client.js into the profile'
+          }
+          $item = Get-Item -LiteralPath $link -Force
+          if (-not $item.Attributes.HasFlag([IO.FileAttributes]::ReparsePoint)) {
+            throw 'install.cmd did not create a junction/reparse point'
+          }
+          & .\uninstall.cmd --home "$home" --profile desktop
+          if ($LASTEXITCODE -ne 0) { throw "uninstall.cmd failed with exit code $LASTEXITCODE" }
+          if (Test-Path -LiteralPath $link) { throw 'uninstall.cmd left the projection behind' }
+          Write-Host 'Windows launcher round-trip OK'
