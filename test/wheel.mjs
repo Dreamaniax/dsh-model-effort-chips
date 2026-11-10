@@ -31,6 +31,12 @@ globalThis.document = window.document
 globalThis.HTMLElement = window.HTMLElement
 globalThis.WheelEvent = window.WheelEvent
 globalThis.Event = window.Event
+// React DOM reads `navigator.userAgent` at module scope. Node 21+ exposes a
+// global navigator; Node 20 does not, so hand it jsdom's before requiring
+// react-dom (the Windows and Ubuntu Node 20 jobs caught this).
+if (globalThis.navigator === undefined) {
+  Object.defineProperty(globalThis, 'navigator', { value: window.navigator, configurable: true })
+}
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
 globalThis.ResizeObserver =
   window.ResizeObserver ??

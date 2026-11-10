@@ -1,0 +1,10 @@
+# Keep every text file LF on every platform: the effects assembler compares
+# generated code byte-for-byte, and a CRLF checkout would make Windows CI fail.
+* text=auto eol=lf
+
+*.png binary
+*.gif binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.webp binary

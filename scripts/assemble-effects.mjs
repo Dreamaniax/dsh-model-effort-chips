@@ -20,6 +20,15 @@ import { fileURLToPath } from 'node:url'
 const here = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const clientPath = join(here, 'lib', 'client.js')
 
+/**
+ * Read a source file with LF endings. A Windows checkout with CRLF must not
+ * make `--check` fail: the assembled block is always joined with LF, so both
+ * sides are normalized before comparing.
+ */
+function readNormalized(path) {
+  return readFileSync(path, 'utf8').replace(/\r\n?/gu, '\n')
+}
+
 /** Declaration order in the menu, and the variable each file must export. */
 const EFFECTS = [
   { file: 'double-pendulum.js', name: 'doublePendulumEffect' },
@@ -49,7 +58,7 @@ function assemble() {
   for (const entry of EFFECTS) {
     const path = join(here, 'lib', 'effects', entry.file)
     if (!existsSync(path)) throw new Error(`missing snippet: lib/effects/${entry.file}`)
-    const source = readFileSync(path, 'utf8').trimEnd()
+    const source = readNormalized(path).trimEnd()
     if (!source.includes(`const ${entry.name} = {`)) {
       throw new Error(`lib/effects/${entry.file} must declare const ${entry.name} = { ... }`)
     }
@@ -66,7 +75,7 @@ function assemble() {
   ].join('\n')
 }
 
-const client = readFileSync(clientPath, 'utf8')
+const client = readNormalized(clientPath)
 const start = client.indexOf(START)
 const end = client.indexOf(END)
 if (start < 0 || end < 0) throw new Error('markers not found in lib/client.js')
