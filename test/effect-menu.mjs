@@ -144,6 +144,13 @@ await act(async () => {
 })
 const rows = options()
 check(rows.length >= 2, 'the menu lists every registered effect')
+const menuPanel = window.document.querySelector('[data-dsh-mec="effect-menu"]')
+check(menuPanel !== null, 'the menu is portalled with its own marker')
+check(menuPanel.getAttribute('role') === 'listbox', 'the menu is a listbox')
+check(menuPanel.getAttribute('aria-label') === '动效', 'the menu has an accessible name')
+const menuStyle = menuPanel.getAttribute('style') ?? ''
+check(/left: \d+px/.test(menuStyle), 'the menu is positioned horizontally')
+check(/top: \d+px/.test(menuStyle) || /bottom: \d+px/.test(menuStyle), 'the menu is anchored above or below the switcher')
 check(switcher.getAttribute('aria-expanded') === 'true', 'the menu reports itself open')
 
 const selected = rows.filter((row) => row.getAttribute('aria-selected') === 'true')
@@ -153,7 +160,10 @@ check(selected[0].dataset.effectOption === 'kunpeng', 'the default effect is the
 // pick the particle effect
 const particle = rows.find((row) => row.dataset.effectOption === 'particle-wave')
 check(particle !== undefined, 'the particle effect is offered')
+// A real click is pointerdown -> pointerup -> click; the panel's outside-click
+// listener runs on the capture phase and used to tear the menu down first.
 await act(async () => {
+  particle.dispatchEvent(new window.MouseEvent('pointerdown', { bubbles: true }))
   particle.dispatchEvent(new window.MouseEvent('click', { bubbles: true }))
   await sleep(20)
 })
