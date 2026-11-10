@@ -290,7 +290,7 @@ npm run test:load    # 桩宿主：数据、映射、磁吸、曲线（87 条）
 npm run test:render  # 真 React SSR：席位与滑条渲染（19 条，含 1/4/5 档）
 npm run test:wheel   # jsdom + 真 DOM：滚轮逐档、快拨、挂死、抛错（9 条）
 npm run test:install # 假 HOME 里安装 → 重装 → 非 desktop profile → 卸载往返（33 条）
-npm run test:effects # 20 个特效的契约 / 600 帧 / 边界
+npm run test:effects # 16 个特效的契约 / 600 帧 / 边界
 ```
 
 安装器测试在 `test/install.mjs`：它在系统临时目录里造一个假 `DSH_HOME`，
@@ -306,7 +306,7 @@ GitHub Actions 在 ubuntu / macOS / windows 三个平台跑同一套测试；Win
 ```
 lib/index.js           host 半边：空实现，只为让 client bundle 被 /plugins 提供
 lib/client.js          浏览器半边：接管座位、两枚 chip、滑条、小球物理、滚轮
-lib/effects/           20 个可插拔特效的独立源文件（assemble 后拼进 client.js）
+lib/effects/           可插拔特效的独立源文件（assemble 后拼进 client.js）
 cordis.patch.yml       bundle patch：把本包插入 profile 的 plugin 名单
 scripts/install.mjs    跨平台安装（macOS/Linux 软链，Windows junction）
 scripts/uninstall.mjs  跨平台卸载（只删链接与两条 profile 记录）
