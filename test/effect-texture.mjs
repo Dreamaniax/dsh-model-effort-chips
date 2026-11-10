@@ -82,11 +82,8 @@ function recordingContext(stats) {
 
 const TEXTURES = [
   ['film-grain.js', 'filmGrainEffect', 'film-grain'],
-  ['brushed.js', 'brushedEffect', 'brushed'],
-  ['caustics.js', 'causticsEffect', 'caustics'],
   ['nebula.js', 'nebulaEffect', 'nebula'],
   ['flames.js', 'flamesEffect', 'flames'],
-  ['halftone.js', 'halftoneEffect', 'halftone'],
 ]
 
 for (const [file, name, id] of TEXTURES) {

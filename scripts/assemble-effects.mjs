@@ -46,11 +46,8 @@ const EFFECTS = [
   { file: 'fireflies.js', name: 'firefliesEffect' },
   // ---- 材质与氛围 ----
   { file: 'film-grain.js', name: 'filmGrainEffect' },
-  { file: 'brushed.js', name: 'brushedEffect' },
-  { file: 'caustics.js', name: 'causticsEffect' },
   { file: 'nebula.js', name: 'nebulaEffect' },
   { file: 'flames.js', name: 'flamesEffect' },
-  { file: 'halftone.js', name: 'halftoneEffect' },
   // ---- 数据与文字 ----
   { file: 'seven-segment.js', name: 'sevenSegmentEffect' },
   { file: 'segments.js', name: 'segmentsEffect' },
