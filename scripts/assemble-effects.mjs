@@ -44,6 +44,13 @@ const EFFECTS = [
   { file: 'accretion-disk.js', name: 'accretionDiskEffect' },
   { file: 'sandstorm.js', name: 'sandstormEffect' },
   { file: 'fireflies.js', name: 'firefliesEffect' },
+  // ---- 形变与过渡 ----
+  { file: 'metaballs.js', name: 'metaballsEffect' },
+  { file: 'cloth.js', name: 'clothEffect' },
+  { file: 'squash.js', name: 'squashEffect' },
+  { file: 'polar.js', name: 'polarEffect' },
+  { file: 'dissolve.js', name: 'dissolveEffect' },
+  { file: 'fold.js', name: 'foldEffect' },
   // ---- 光与色 ----
   { file: 'aurora.js', name: 'auroraEffect' },
   { file: 'afterglow.js', name: 'afterglowEffect' },
