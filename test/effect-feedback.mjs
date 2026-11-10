@@ -112,6 +112,25 @@ for (const [file, name, kind] of FEEDBACK) {
     check(Number.isFinite(state.x) && Number.isFinite(state.v), `${id}: spring state stays finite`)
   }
 
+  // A slow drag in +0.01 steps must not fire anything: that is the whole point of
+  // the 0.03 threshold. Without this the threshold could be zero and tests pass.
+  if (kind === 'pools' || kind === 'envelope') {
+    // Prime it at a constant level first, so the first step is not a jump.
+    const creep = effect.createState()
+    for (let step = 0; step < 30; step += 1) effect.step(creep, frameFor(effect, 0.2))
+    let fired = 0
+    for (let step = 0; step < 100; step += 1) {
+      const before = kind === 'pools' ? creep.ages.slice() : [creep.env]
+      effect.step(creep, frameFor(effect, 0.2 + step * 0.01))
+      if (kind === 'pools') {
+        if (creep.ages.some((age, index) => age < 1 && before[index] >= 1)) fired += 1
+      } else if (creep.env > 0 && before[0] === 0) {
+        fired += 1
+      }
+    }
+    check(fired === 0, `${id}: a +0.01/frame drag never fires (${fired} times)`)
+  }
+
   // Every drawn sprite is on whole pixels and inside the band.
   const box = (effect.layout.sky ?? 0) + (effect.layout.band ?? 0)
   const seen = new Set()
@@ -120,17 +139,38 @@ for (const [file, name, kind] of FEEDBACK) {
   for (let step = 0; step < 900; step += 1) {
     const frame = frameFor(effect, levels[Math.floor(step / 120) % levels.length])
     effect.step(run, frame)
-    for (const call of paintCalls(effect, run, frame)) {
+    const frameCalls = paintCalls(effect, run, frame)
+    for (const call of frameCalls) {
       if (call[0] !== 'drawImage') continue
       const [, image, sx, sy, sw, sh, dx, dy, dw, dh] = call
       check(image === ART, `${id}: blits the strip from frame.art`)
       check(sx >= 0 && sx < 288 && sx % 48 === 0, `${id}: source rect aligned to a frame (${sx})`)
       check(Number.isInteger(dx) && Number.isInteger(dy) && Number.isInteger(dw), `${id}: whole-pixel destination`)
-      check(dy >= -1 && dy + dh <= box + 1, `${id}: sprite inside the band (${dy}..${dy + dh} of ${box})`)
+      const shift = frameCalls.find(([op]) => op === 'translate')
+      const sx2 = shift ? shift[1] : 0
+      const sy2 = shift ? shift[2] : 0
+      check(Number.isInteger(sx2) && Number.isInteger(sy2), `${id}: the shake offset is whole pixels`)
+      check(dy + sy2 >= -1 && dy + sy2 + dh <= box + 1, `${id}: sprite inside the band after the transform (${(dy + sy2).toFixed(1)}..${(dy + sy2 + dh).toFixed(1)} of ${box})`)
+      // An effect that clips its box may deliberately spill (that is what a shake
+      // does); everything else must stay on the panel.
+      const clipped = frameCalls.some(([op]) => op === 'clip')
+      const slack = clipped ? 4 : 1
+      check(dx + sx2 >= -slack && dx + sx2 + dw <= 284 + slack, `${id}: sprite inside the panel width (${(dx + sx2).toFixed(1)}..${(dx + sx2 + dw).toFixed(1)} of 284)`)
       seen.add(sx / 48)
     }
   }
   check(seen.size >= 1, `${id}: painted at least one frame`)
+
+  // Reduced motion: the shake stands down instead of translating the canvas.
+  if (id === 'micro-shake') {
+    const calmState = effect.createState()
+    const calmFrame = { ...frameFor(effect, 0.9), reducedMotion: true }
+    for (let step = 0; step < 5; step += 1) effect.step(calmState, frameFor(effect, 0.2))
+    effect.step(calmState, calmFrame)
+    const calmCalls = paintCalls(effect, calmState, calmFrame)
+    const shift = calmCalls.find(([op]) => op === 'translate')
+    check(!shift || (shift[1] === 0 && shift[2] === 0), `${id}: no shake when reduced motion is on`)
+  }
 
   // No art: still paints, never blits.
   const empty = effect.createState()
