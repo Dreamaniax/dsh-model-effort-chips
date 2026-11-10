@@ -68,3 +68,40 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "uninstall.cmd failed with exit code $LASTEXITCODE" }
           if (Test-Path -LiteralPath $link) { throw 'uninstall.cmd left the projection behind' }
           Write-Host 'Windows launcher round-trip OK'
+
+      - name: Windows fallback without node on PATH
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          # Pretend the user has no Node.js on PATH but a Desktop installation
+          # exists in the conventional per-user location. Copy node.exe under the
+          # application name so the registry/common-directory branch of
+          # scripts/win/node-runtime.ps1 is exercised end to end.
+          $fakeAppDir = Join-Path $env:LOCALAPPDATA 'Programs\DeepSeek Harness'
+          New-Item -ItemType Directory -Force $fakeAppDir | Out-Null
+          Copy-Item -LiteralPath (Get-Command node).Source -Destination (Join-Path $fakeAppDir 'DeepSeek Harness.exe')
+
+          $mecHome = Join-Path $env:RUNNER_TEMP 'mec-fallback-home'
+          New-Item -ItemType Directory -Force (Join-Path $mecHome 'profiles\desktop') | Out-Null
+          '{"name":"dsh-profile-desktop","private":true,"dependencies":{},"dsh":{"profile":{"bundles":[]}}}' |
+            Set-Content -LiteralPath (Join-Path $mecHome 'profiles\desktop\package.json') -Encoding UTF8
+
+          $savedPath = $env:PATH
+          # Keep only Windows PowerShell and System32: no node, no setup-node dir.
+          $env:PATH = "$env:SystemRoot\System32\WindowsPowerShell\v1.0;$env:SystemRoot\System32;$env:SystemRoot"
+          try {
+            & .\install.cmd --home "$mecHome" --profile desktop
+            if ($LASTEXITCODE -ne 0) { throw "install.cmd fallback failed with exit code $LASTEXITCODE" }
+            $link = Join-Path $mecHome 'profiles\desktop\node_modules\dsh-model-effort-chips'
+            if (-not (Test-Path -LiteralPath (Join-Path $link 'lib\client.js'))) {
+              throw 'fallback install did not project lib/client.js'
+            }
+            if (-not (Get-Item -LiteralPath $link -Force).Attributes.HasFlag([IO.FileAttributes]::ReparsePoint)) {
+              throw 'fallback install did not create a junction'
+            }
+            & .\uninstall.cmd --home "$mecHome" --profile desktop
+            if ($LASTEXITCODE -ne 0) { throw "uninstall.cmd fallback failed with exit code $LASTEXITCODE" }
+            Write-Host 'Windows no-node fallback OK'
+          } finally {
+            $env:PATH = $savedPath
+          }
