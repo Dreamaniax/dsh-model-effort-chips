@@ -149,7 +149,7 @@ await act(async () => {
 })
 const categories = () => [...window.document.querySelectorAll('[data-effect-category]')]
 check(options().length === 0, 'the first level lists categories, not effects')
-check(categories().length === 9, 'every non-empty category is offered')
+check(categories().length === 10, 'every non-empty category is offered')
 check(
   categories().map((row) => row.dataset.effectCategory).includes('physics'),
   'the physics effects are grouped under 物理仿真'
