@@ -45,9 +45,6 @@ const EFFECTS = [
   { file: 'sandstorm.js', name: 'sandstormEffect' },
   { file: 'fireflies.js', name: 'firefliesEffect' },
   // ---- 光与色 ----
-  { file: 'glow-breath.js', name: 'glowBreathEffect' },
-  { file: 'laser-scan.js', name: 'laserScanEffect' },
-  { file: 'prism.js', name: 'prismEffect' },
   { file: 'aurora.js', name: 'auroraEffect' },
   { file: 'afterglow.js', name: 'afterglowEffect' },
   { file: 'embers.js', name: 'embersEffect' },
