@@ -184,6 +184,9 @@ for (const effect of EFFECTS) {
       .flatMap(([, ...args]) => args)
       .filter((arg) => typeof arg === 'number' && (!Number.isFinite(arg) || Math.abs(arg) > 20000))
     check(bad.length === 0, `${effect.id}: paint at e=${energy} stays bounded`, bad.slice(0, 3).join(','))
+    // Only plain Arrays count. Typed buffers (flow-field's 6720-slot trail,
+    // metaballs' field, contour's samples) are allocated once in createState and
+    // never grow, so they are deliberately outside this ceiling.
     const biggest = largestArray(state)
     check(biggest <= 400, `${effect.id}: state stays small at e=${energy}`, `largest array ${biggest}`)
   }
