@@ -3,6 +3,10 @@
 > DeepSeek Harness 的模型 / 思考强度分体控件：把输入区那颗合并的「模型 · 强度」按钮拆成两枚独立 chip。
 
 [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![release](https://img.shields.io/github/v/release/Dreamaniax/dsh-model-effort-chips)](https://github.com/Dreamaniax/dsh-model-effort-chips/releases)
+[![tests](https://github.com/Dreamaniax/dsh-model-effort-chips/actions/workflows/ci.yml/badge.svg)](https://github.com/Dreamaniax/dsh-model-effort-chips/actions/workflows/ci.yml)
+
+> 平台：macOS 与 Windows x64 的 DSH Desktop，要求 DSH `>= 0.2.2-rc.1`。纯浏览器端 ESM，无编译、无原生依赖；安装器在 ubuntu / macOS / Windows 三平台 CI 上跑往返测试。
 
 ## 效果预览
 
@@ -35,31 +39,74 @@
 
 ## 安装
 
-三种方式，选一种。
+四种方式，按你的情况选一种。**Windows 用户请先看 [docs/install-windows.md](docs/install-windows.md)**（端口、Git、执行策略、排错都在那里）。
 
-### 1. git clone + 本地脚本（推荐，已验证）
+### 1. 官方 CLI（推荐，macOS / Windows，无需 Node.js、无需管理员权限）
+
+DSH Desktop 0.2.x 自带的 `dsh` 命令可以管理 `desktop` profile 的插件。先用应用菜单
+**Manage dsh Command… → Install** 装好命令，然后再操作：
+
+```sh
+# 1. 先打开一次 DSH Desktop，让它初始化 desktop profile
+# 2. 菜单 Manage dsh Command… → Install，打开一个新终端确认
+dsh --version
+
+# 3. 完全退出 DSH Desktop（Windows：托盘图标 → Quit；macOS：⌘Q）
+
+# 4. 从 GitHub 安装（会拉取一份完整包到 profile，不需要 clone）
+dsh plugin --profile desktop add github:Dreamaniax/dsh-model-effort-chips
+
+# 或安装本机 checkout（开发用，必须是绝对路径）
+dsh plugin --profile desktop add link:/Users/me/dsh-model-effort-chips
+dsh plugin --profile desktop add "link:C:\Users\me\dsh-model-effort-chips"
+
+# 5. 重新打开 DSH Desktop
+```
+
+卸载同样要先完全退出 Desktop：
+
+```sh
+dsh plugin --profile desktop remove dsh-model-effort-chips
+```
+
+> ⚠️ Windows 上如果没装 Git for Windows，`github:` 会失败——改用第 2 或第 3 种方式。
+> npm 安装的 `dsh` CLI 不能管理 `desktop` profile（会报
+> `profile "desktop" is managed exclusively by the Electron application`）；
+> 必须用 Desktop 菜单里安装的那一个。
+
+### 2. Plugins 页面（GUI，macOS / Windows）
+
+DSH Desktop → 侧栏 **Plugins** → **Add plugin** → 粘贴
+`github:Dreamaniax/dsh-model-effort-chips`（或本机绝对路径）→ **Install** → **Enable**，
+然后完全退出并重开 Desktop。
+
+### 3. 本地 checkout + 脚本（开发 / 离线，已验证）
 
 ```sh
 git clone https://github.com/Dreamaniax/dsh-model-effort-chips.git
 cd dsh-model-effort-chips
-node scripts/install.mjs          # 写 link 依赖 + bundles 条目 + 建软链 + 四项校验
+node scripts/install.mjs          # macOS / Linux；四项校验，幂等
 ```
 
-然后**完全退出并重开** DeepSeek Harness（客户端 bundle 在启动时注入）。
+Windows（不需要管理员权限，也不需要 Developer Mode；脚本优先用 PATH 里的 Node，
+找不到时自动调用 DSH Desktop 自带的 Electron 运行时）：
 
-> 为什么用脚本：`desktop` profile 被 Electron 独占，`dsh plugin --profile desktop add ...`
-> 会被直接拒绝（`profile "desktop" is managed exclusively by the Electron application`）。
-> 脚本做的正是官方 CLI 会做的事：改 profile 的 `package.json`、写
-> `dsh.profile.bundles`、在 `node_modules` 下建软链。
-
-### 2. DSH 里的插件命令（非 desktop profile）
-
-```sh
-dsh plugin --profile <name> add link:/absolute/path/to/dsh-model-effort-chips
-dsh plugin --profile <name> add github:Dreamaniax/dsh-model-effort-chips
+```bat
+install.cmd                       :: desktop profile
+install.cmd --profile web         :: 其它 profile
+install.cmd --home D:\dsh-home    :: 非默认 DSH_HOME
+install.cmd --dry-run             :: 只打印要写什么
 ```
 
-### 3. 手动（看清楚再动）
+脚本做的正是官方 CLI 会做的事：备份 profile 的 `package.json` → 写 `link:` 依赖 →
+把包名追加进 `dsh.profile.bundles` → 在 profile 的 `node_modules` 下建投影
+（macOS/Linux 软链，**Windows junction**），最后四项校验。重复执行幂等；
+不会修改 DSH 安装目录，也不碰其它插件。
+
+> 为什么还保留脚本：旧版 DSH、没有 Desktop `dsh` 命令、没有 Git、需要离线安装、
+> 或者正在改这个插件源码时，脚本都能装。Windows junction 不需要管理员权限。
+
+### 4. 手动（看清楚再动）
 
 在 `~/.dsh/profiles/<profile>/package.json` 里加两处：
 
@@ -70,26 +117,38 @@ dsh plugin --profile <name> add github:Dreamaniax/dsh-model-effort-chips
 }
 ```
 
-再建软链 `node_modules/dsh-model-effort-chips -> 那个目录`，然后重启。
-装完可以直接自检，见下节。
+再建投影：macOS/Linux 用软链；Windows 用 junction（不需要管理员）：
+
+```bat
+mklink /J "%USERPROFILE%\.dsh\profiles\desktop\node_modules\dsh-model-effort-chips" "C:\path\to\dsh-model-effort-chips"
+```
+
+然后完全退出并重开 DSH Desktop。
 
 ---
 
 ## 自检 / 卸载
 
 ```sh
-node scripts/verify.mjs --port <DSH 页面端口>   # 依赖、bundles、软链、启动图、服务端字节五项
-node scripts/uninstall.mjs                      # 只删链接与两条 profile 记录，代码留着
+node scripts/verify.mjs              # 自动探测本机正在运行的 DSH
+node scripts/verify.mjs --port 62608 # 或显式指定端口
+node scripts/verify.mjs --home /path/to/dsh-home
+node scripts/uninstall.mjs           # 只删依赖记录、bundle 条目和投影，代码留着
 ```
 
-`verify.mjs` 专门抓「装上了但浏览器没拿到」这一类：它会去读宿主的客户端启动图，
-再拉一次 bundle 与本地文件逐字节比对。
+Windows 直接运行根目录的 `verify.cmd` / `uninstall.cmd` 即可（会自动找 Node，
+找不到就用 DSH Desktop 的 Electron 运行时；报错信息里也会给出官方 CLI 的替代命令）。
+
+`verify.mjs` 检查五件事：依赖记录、`dsh.profile.bundles`、`node_modules` 投影可读、
+投影确实指向本 checkout、宿主启动图里注入了这个包且服务端字节与本机一致。
+Windows Desktop 的端口由系统随机分配、界面里看不到，不传 `--port` 时脚本会从本机
+监听端口里自动找（`netstat` / `lsof`），找到带本插件的启动图为止。
 
 ---
 
 ## 特效
 
-强度面板底部的 canvas 由一个**可插拔的特效**负责。目前有 **20 个**，菜单里按大类分组：物理仿真（5）/ 粒子场（5）/ 几何线条（6）/ 波形信号（3）/ 角色演出（1）。
+强度面板底部的 canvas 由一个**可插拔的特效**负责。目前有 **16 个**，菜单里按大类分组：物理仿真（5）/ 粒子场（5）/ 几何线条（2）/ 波形信号（3）/ 角色演出（1）。
 
 | 特效 | id | 天空 | 机制 |
 | --- | --- | --- | --- |
@@ -106,10 +165,6 @@ node scripts/uninstall.mjs                      # 只删链接与两条 profile 
 | 萤火虫同步 | `fireflies` | 0 | 24 个相位振子耦合，档位越高越同步地闪 |
 | 万花尺 | `spirograph` | 84 | 内摆线尾迹，R/r 恒为非整数，档位越高花瓣越密 |
 | 傅里叶本轮 | `fourier-epicycles` | 0 | 1→7 个旋转圆首尾相连，笔尖描出曲线 |
-| 分形树 | `fractal-tree` | 70 | 迭代二叉树枝，深度 2→5 阶跃，长满后点亮叶端 |
-| 莫尔条纹 | `moire` | 0 | 两层线栅相对旋转，产生缓慢漂移的干涉竖条 |
-| 阿基米德螺线 | `spiral` | 76 | 螺线从中心长出，光点沿螺线跑，圈数随档位增加 |
-| 希尔伯特曲线 | `hilbert` | 0 | 1→4 阶空间填充曲线，光点沿路径行进 |
 | 谐波叠加 | `harmonics` | 0 | 1→8 条谐波叠成尖脊；分量 1/k^0.75，基频 0.5+2.5e |
 | Chirp 扫频 | `chirp` | 0 | 频率 2+20e Hz 线性上扫，1.5s 一轮，相位取模保持连续 |
 | 驻波 | `standing-wave` | 0 | 两端固定弦的驻波，模态 1→4 阶跃，节点固定、0.15s 淡化 |
@@ -229,25 +284,41 @@ const EFFECTS = [particleWaveEffect, myEffect]
 ## 开发与测试
 
 ```sh
-npm install        # 只装测试依赖：react / react-dom / jsdom
-npm test           # 三套一起跑
-npm run test:load   # 桩宿主：数据、映射、磁吸、曲线（87 条）
-npm run test:render # 真 React SSR：席位与滑条渲染（19 条，含 1/4/5 档）
-npm run test:wheel  # jsdom + 真 DOM：滚轮逐档、快拨、挂死、抛错（9 条）
-node scripts/verify.mjs --port <端口>
+npm install          # 只装测试依赖：react / react-dom / jsdom
+npm test             # 客户端 + 动效 + 安装器全量
+npm run test:load    # 桩宿主：数据、映射、磁吸、曲线（87 条）
+npm run test:render  # 真 React SSR：席位与滑条渲染（19 条，含 1/4/5 档）
+npm run test:wheel   # jsdom + 真 DOM：滚轮逐档、快拨、挂死、抛错（9 条）
+npm run test:install # 假 HOME 里安装 → 重装 → 非 desktop profile → 卸载往返（33 条）
+npm run test:effects # 20 个特效的契约 / 600 帧 / 边界
 ```
 
+安装器测试在 `test/install.mjs`：它在系统临时目录里造一个假 `DSH_HOME`，
+完整跑安装、幂等重装、`--dry-run`、换 profile、卸载和二次卸载，**不会碰真实的 `~/.dsh`**。
+GitHub Actions 在 ubuntu / macOS / windows 三个平台跑同一套测试；Windows job 额外用
+`install.cmd` / `uninstall.cmd` 真实验证 junction 创建和清除。
+
 改动 `lib/client.js` 后**不需要构建**——这是手写的 ESM bundle，重启 DSH 即可加载；
-如果只是想让浏览器重新取包，硬刷新（⌘⇧R）就够。
+如果只是想让浏览器重新取包，硬刷新就够：macOS 是 ⌘⇧R，Windows 是 Ctrl+Shift+R。
 
 ## 目录
 
 ```
-lib/index.js      host 半边：空实现，只为让 client bundle 被 /plugins 提供
-lib/client.js     浏览器半边：接管座位、两枚 chip、滑条、小球物理、滚轮
-cordis.patch.yml  bundle patch：把本包插入 profile 的 plugin 名单
-scripts/          install / uninstall / verify
-test/             client-load（桩）/ render（真 React）/ wheel（jsdom）
+lib/index.js           host 半边：空实现，只为让 client bundle 被 /plugins 提供
+lib/client.js          浏览器半边：接管座位、两枚 chip、滑条、小球物理、滚轮
+lib/effects/           20 个可插拔特效的独立源文件（assemble 后拼进 client.js）
+cordis.patch.yml       bundle patch：把本包插入 profile 的 plugin 名单
+scripts/install.mjs    跨平台安装（macOS/Linux 软链，Windows junction）
+scripts/uninstall.mjs  跨平台卸载（只删链接与两条 profile 记录）
+scripts/verify.mjs     五项自检 + 自动探测运行中的 host
+scripts/lib/           安装器共享的路径 / 链接 / 原子写逻辑
+scripts/win/           Windows 启动器的 Node / DSH Electron 探测
+install.cmd / .ps1     Windows 一键安装（无需管理员）
+uninstall.cmd / .ps1   Windows 一键卸载
+verify.cmd / .ps1      Windows 一键自检
+test/                  client-load（桩）/ render / wheel / effects / install
+.github/workflows/     ubuntu / macOS / Windows 测试矩阵
+docs/install-windows.md  Windows 安装与排错
 ```
 
 ## 已知限制
@@ -255,6 +326,8 @@ test/             client-load（桩）/ render（真 React）/ wheel（jsdom）
 - 依赖「single 槽 + priority 遮蔽」这一官方语义，DSH 大版本升级可能改变它；届时最差是回到官方控件
 - 档位集合完全由模型自己声明，模型没声明档位时强度 chip 会整颗消失
 - 官方 `/model` 弹窗未受影响，仍可正常使用
+- 要求 DSH `>= 0.2.2-rc.1`；更早的 DSH（包括旧 Windows 安装包）没有本插件用的单人座位/模型目录 API，请先升级 Desktop
+- Windows 的安装器、junction、客户端 bundle 测试都在 windows-latest CI 上真实跑过；桌面里的最终 UI 冒烟由 Windows 用户完成（同一份 web client，不存在平台分支）
 
 ## License
 
