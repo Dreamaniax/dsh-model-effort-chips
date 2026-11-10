@@ -111,7 +111,9 @@ function listeningPorts() {
     if (process.platform === 'win32') {
       const output = execFileSync('netstat', ['-ano', '-p', 'tcp'], { encoding: 'utf8', windowsHide: true })
       for (const line of output.split(/\r?\n/u)) {
-        const match = /^\s*TCP\s+127\.0\.0\.1:(\d+)\s+\S+\s+LISTENING\s+\d+/iu.exec(line)
+        // Do not match on the state word: netstat localizes it on some
+        // Windows locales. A listener has the wildcard foreign address.
+        const match = /^\s*TCP\s+127\.0\.0\.1:(\d+)\s+0\.0\.0\.0:0\s+\S+\s+\d+/iu.exec(line)
         if (match !== null) ports.add(Number(match[1]))
       }
     } else {
@@ -167,6 +169,9 @@ async function main() {
 
   const paths = profilePaths(options)
   const { manifestPath, linkPath, profileDir, profileName, dshHome } = paths
+  const usesDefaultHome =
+    options.home === null &&
+    !(typeof process.env.DSH_HOME === 'string' && process.env.DSH_HOME.trim() !== '')
   console.log(`[verify] package: ${PKG}`)
   console.log(`[verify] home:    ${dshHome}`)
   console.log(`[verify] profile: ${profileName} (${profileDir})`)
@@ -207,11 +212,20 @@ async function main() {
   let base = options.url ?? (Number.isFinite(options.port) ? `http://127.0.0.1:${options.port}` : null)
   let graph = null
   let explicitHost = base !== null
+  let liveNote = null
   if (base === null) {
-    const found = await discoverHost()
-    if (found !== null) {
-      base = found.base
-      graph = found.graph
+    if (!usesDefaultHome) {
+      // A discovered host is not bound to the --home/DSH_HOME being inspected,
+      // so a broken profile could pass by talking to another installation.
+      liveNote = 'non-default home: pass --port or --url to check its live host'
+    } else {
+      const found = await discoverHost()
+      if (found !== null) {
+        base = found.base
+        graph = found.graph
+      } else {
+        liveNote = 'not running or not discoverable; start DeepSeek Harness or pass --port'
+      }
     }
   } else {
     graph = await readGraph(base, 4000)
@@ -219,7 +233,7 @@ async function main() {
   }
 
   if (base === null) {
-    record(null, 'live host', 'not running or not discoverable; start DeepSeek Harness or pass --port')
+    record(null, 'live host', liveNote)
   } else {
     console.log(`[verify] host:    ${base}`)
     const entry = graph?.entries?.find((item) => item.id === PKG)

@@ -94,7 +94,12 @@ async function main() {
   }
 
   const before = readFileSync(manifestPath, 'utf8')
-  const manifest = JSON.parse(before)
+  let manifest
+  try {
+    manifest = JSON.parse(before)
+  } catch (error) {
+    fail(`profile package.json is not valid JSON: ${manifestPath}\n  ${error?.message ?? error}`)
+  }
   manifest.dependencies ??= {}
   manifest.dsh ??= {}
   manifest.dsh.profile ??= {}
@@ -125,20 +130,30 @@ async function main() {
     return
   }
 
-  if (before !== next) {
-    const backupPath = backupManifest(manifestPath)
-    console.log(`[install] backup:   ${backupPath}`)
-    await writeFileAtomic(manifestPath, next)
-    console.log('[install] manifest: dependency + bundle entry written')
-  } else {
-    console.log('[install] manifest: already up to date')
-  }
-
+  // Create the projection first: a failed junction (OneDrive, a network share,
+  // a locked node_modules) must not leave the manifest pointing at a bundle
+  // that was never linked. Nothing is written until the link exists.
   try {
     const projection = createProjection(linkPath, here)
     console.log(`[install] ${projection.kind}: ${linkPath} -> ${here}`)
   } catch (error) {
-    fail(error.message)
+    fail(`${error.message}\n  The profile manifest was not changed; fix the link and retry.`)
+  }
+
+  if (before !== next) {
+    const backupPath = backupManifest(manifestPath)
+    console.log(`[install] backup:   ${backupPath}`)
+    try {
+      await writeFileAtomic(manifestPath, next)
+      console.log('[install] manifest: dependency + bundle entry written')
+    } catch (error) {
+      fail(
+        `could not write ${manifestPath}: ${error?.message ?? error}\n` +
+          '  Close DeepSeek Harness and any antivirus/indexer holding the file, then retry.',
+      )
+    }
+  } else {
+    console.log('[install] manifest: already up to date')
   }
 
   // Re-read from disk: the check must pass on what the host will actually see.
@@ -154,7 +169,8 @@ async function main() {
 
   console.log('\n[install] OK — manifest, bundle list, link and client bundle all check out.')
   console.log(`[install] ${restartHint()}`)
-  console.log('[install] Then confirm the live bundle with: node scripts/verify.mjs --port <GUI port>')
+  const verifyCommand = process.platform === 'win32' ? 'verify.cmd' : 'node scripts/verify.mjs'
+  console.log(`[install] Then confirm the live bundle with: ${verifyCommand}`)
 }
 
 await main()

@@ -18,7 +18,6 @@ import {
   lstatSync,
   mkdirSync,
   readFileSync,
-  readlinkSync,
   realpathSync,
   renameSync,
   rmdirSync,
@@ -28,7 +27,7 @@ import {
   writeFileSync,
 } from 'node:fs'
 import { homedir } from 'node:os'
-import { dirname, isAbsolute, join, resolve } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
 
 /** Package name, spelled once for every script. */
 export const PKG = 'dsh-model-effort-chips'
@@ -69,9 +68,20 @@ export function parseCommonArgs(argv) {
   return options
 }
 
-/** Absolute `$DSH_HOME`, from the explicit flag, the environment, or `~/.dsh`. */
+/**
+ * Absolute `$DSH_HOME`, from the explicit flag, the environment, or `~/.dsh`.
+ *
+ * A blank value counts as unset, and a leading `~` is expanded, matching the
+ * way DSH resolves its own home. Without this, `set DSH_HOME=` in a wrapper
+ * would silently resolve to the current directory and report a missing profile.
+ */
 export function resolveDshHome(explicitHome) {
-  const value = explicitHome ?? process.env.DSH_HOME ?? join(homedir(), '.dsh')
+  let value = explicitHome ?? process.env.DSH_HOME
+  if (typeof value !== 'string' || value.trim() === '') value = join(homedir(), '.dsh')
+  value = value.trim()
+  if (value === '~' || value.startsWith('~/') || value.startsWith('~\\')) {
+    value = join(homedir(), value.slice(1))
+  }
   return resolve(value)
 }
 
@@ -92,15 +102,6 @@ export function profilePaths({ home, profile }) {
 export function linkValueFor(target) {
   const path = WIN ? target.replace(/\\/gu, '/') : target
   return `link:${path}`
-}
-
-/** Resolve a recorded manifest spec (`link:` / `file:` / bare absolute) to an absolute path. */
-export function specToPath(spec, profileDir) {
-  let value = String(spec)
-  value = value.replace(/^(?:link|file):/u, '')
-  if (WIN) value = value.replace(/\//gu, '\\')
-  if (value.startsWith('~')) value = join(homedir(), value.slice(1))
-  return isAbsolute(value) ? resolve(value) : resolve(profileDir, value)
 }
 
 /** Compare two paths the way the local filesystem does (case-insensitive on Windows). */
@@ -189,44 +190,40 @@ export function pathKind(path) {
  * EPERM on others, where rmdir() is the correct call. A real directory is
  * moved aside rather than deleted, because a copied install may live there.
  */
-export function removeProjection(path, { moveDirectory = true } = {}) {
+export function removeProjection(path) {
   const kind = pathKind(path)
-  if (kind === 'missing') return false
+  if (kind === 'missing') return { outcome: 'missing' }
 
   if (kind === 'link') {
     try {
       unlinkSync(path)
-      return true
+      return { outcome: 'removed' }
     } catch (error) {
       if (WIN && ['EPERM', 'EACCES', 'EISDIR'].includes(error?.code ?? '')) {
         try {
           rmdirSync(path)
-          return true
+          return { outcome: 'removed' }
         } catch {
-          // fall through to the rename/rm fallbacks below
+          // fall through to the rename fallback below
         }
       }
-      if (moveDirectory) {
-        const backup = `${path}.mec-backup-${Date.now()}`
-        renameSync(path, backup)
-        return true
-      }
-      throw error
+      // Never delete through a link whose removal failed: move it aside so the
+      // target stays untouched and the user can inspect it.
+      const backup = `${path}.mec-backup-${Date.now()}`
+      renameSync(path, backup)
+      return { outcome: 'moved', backup }
     }
   }
 
   if (kind === 'directory') {
-    if (!moveDirectory) {
-      rmSync(path, { recursive: true, force: true })
-      return true
-    }
+    // A copied install may live here; renaming keeps its contents recoverable.
     const backup = `${path}.mec-backup-${Date.now()}`
     renameSync(path, backup)
-    return true
+    return { outcome: 'moved', backup }
   }
 
   unlinkSync(path)
-  return true
+  return { outcome: 'removed' }
 }
 
 /**
@@ -263,15 +260,6 @@ export function createProjection(linkPath, target) {
 
   symlinkSync(target, linkPath, 'dir')
   return { kind: 'symlink', target }
-}
-
-/** Read the link target without following it, for diagnostics. */
-export function readLinkTarget(path) {
-  try {
-    return readlinkSync(path)
-  } catch {
-    return null
-  }
 }
 
 /** The restart instruction that matches the host we are actually on. */

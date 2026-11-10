@@ -13,4 +13,4 @@ $here = $PSScriptRoot
 
 . (Join-Path $here 'scripts\win\node-runtime.ps1')
 
-Invoke-MecNodeScript -ScriptPath (Join-Path $here 'scripts\verify.mjs') -ScriptArgs $args
+Invoke-MecNodeScript -ScriptPath (Join-Path $here 'scripts\verify.mjs') -ScriptArgs $args -Action 'verify'

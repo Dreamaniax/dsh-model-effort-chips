@@ -1,5 +1,29 @@
 # Changelog
 
+## 1.24.1 — 2026-11-10
+
+安装器健壮性修复（独立审查发现，无高危项，均可恢复/重跑）：
+
+- **先建链接、再写 manifest**：junction 失败（OneDrive、网络盘、`node_modules` 被占用）时
+  不再留下「bundle 已登记、链接却不存在」的半安装 profile；失败信息明确说明 profile 未改。
+- `DSH_HOME=''` / `--home=` 现在视为未设置并回退 `~/.dsh`，`~` 前缀会展开；不会再
+  静默解析到当前目录。
+- `verify` 的 live 检查只在默认 home 下自动发现宿主；传了 `--home`/`DSH_HOME` 时要求显式
+  `--port`/`--url`，避免用另一套安装的宿主把坏 profile「验绿」。
+- Windows 端口发现不再依赖英文 `LISTENING` 字样（部分系统本地化状态名），改为按通配
+  外部地址匹配监听行。
+- Windows 启动器探测 PATH 上的 Node 时先跑 `node --version`，低于 20 或遇到 Store
+  执行别名桩时回退到 DSH 自带的 Electron 运行时。
+- profile `package.json` 非法 JSON（含 PowerShell 5.1 写的 BOM）给出可读错误，不再抛堆栈。
+- Windows 安装完成提示改为 `verify.cmd`，无需 Node。
+- CI 的 Windows 断言改为 `LinkType -eq 'Junction'`，Developer Mode 的目录符号链接不再
+  冒充 junction；`uninstall`/`verify` 启动器的错误前缀也按动作区分。
+- 文档：Release zip 的解压目录层级、`mklink /J` 前需先建 `node_modules`、退出 Desktop
+  的原因措辞。
+
+安装器回归测试增至 42 项（新增失败投影不脏 profile、非法 JSON、空 home、live 不借用
+其它 home 四组）。
+
 ## 1.24.0 — 2026-11-10
 
 首个明确支持 **Windows** 的版本。插件本身仍是同一份纯浏览器端 ESM；这一版把

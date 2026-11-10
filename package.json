@@ -1,6 +1,6 @@
 {
   "name": "dsh-model-effort-chips",
-  "version": "1.24.0",
+  "version": "1.24.1",
   "private": true,
   "description": "Split DeepSeek Harness's composer model seat into a model chip and a reasoning-effort chip with a draggable, wheel-adjustable slider. Works on macOS and Windows.",
   "type": "module",

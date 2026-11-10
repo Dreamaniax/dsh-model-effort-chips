@@ -120,6 +120,7 @@ install.cmd --dry-run             :: 只打印要写什么
 再建投影：macOS/Linux 用软链；Windows 用 junction（不需要管理员）：
 
 ```bat
+mkdir "%USERPROFILE%\.dsh\profiles\desktop\node_modules" 2>nul
 mklink /J "%USERPROFILE%\.dsh\profiles\desktop\node_modules\dsh-model-effort-chips" "C:\path\to\dsh-model-effort-chips"
 ```
 
@@ -289,7 +290,7 @@ npm test             # 客户端 + 动效 + 安装器全量
 npm run test:load    # 桩宿主：数据、映射、磁吸、曲线（87 条）
 npm run test:render  # 真 React SSR：席位与滑条渲染（19 条，含 1/4/5 档）
 npm run test:wheel   # jsdom + 真 DOM：滚轮逐档、快拨、挂死、抛错（9 条）
-npm run test:install # 假 HOME 里安装 → 重装 → 非 desktop profile → 卸载往返（33 条）
+npm run test:install # 假 HOME 里安装 → 重装 → 非 desktop profile → 卸载往返（42 条）
 npm run test:effects # 16 个特效的契约 / 600 帧 / 边界
 ```
 

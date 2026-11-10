@@ -31,7 +31,7 @@ DSH Desktop 0.2.x 自带一个可以管理 `desktop` profile 的 `dsh` 命令。
    ```
 
 4. **完全退出 Desktop**：不要只点窗口的 ×（那只是隐藏到托盘），要右键托盘图标 → **Quit**。
-   官方要求退出后再改 profile，否则会撞上 profile 锁。
+   官方要求退出后再改 profile：运行中的 Desktop 不会重新读取配置，而且它独占 profile 的包管理状态。
 5. 安装插件：
 
    ```powershell
@@ -72,11 +72,12 @@ dsh plugin --profile desktop remove dsh-model-effort-chips
 适合没有 Git、没有 Node、或需要离线的机器。
 
 1. 到 [Releases](https://github.com/Dreamaniax/dsh-model-effort-chips/releases) 下载
-   `dsh-model-effort-chips-<版本>.zip`，解压到一个**长期保留**的目录，例如
+   `dsh-model-effort-chips-<版本>.zip`。解压后会得到一个同名外层目录
+   `dsh-model-effort-chips-<版本>\`，把它移动到**长期保留**的位置，例如
    `C:\Users\me\dsh-plugins\dsh-model-effort-chips`（删掉这个目录插件就失效）。
 2. 如果 zip 是从浏览器下载的，右键 zip → **属性** → 勾选 **Unblock** 再解压，
    避免 SmartScreen/Mark-of-the-Web 拦截脚本。
-3. 在该目录打开 CMD 或 PowerShell：
+3. **进入这个外层目录**（`install.cmd` 就在里面）再打开 CMD 或 PowerShell：
 
    ```bat
    install.cmd
@@ -115,7 +116,7 @@ install.cmd
 
 `install.cmd` → `install.ps1` → `scripts\win\node-runtime.ps1`，依次尝试：
 
-1. PATH 上的 `node`
+1. PATH 上的 `node`（先跑 `node --version`，低于 20 或 Store 执行别名桩会被跳过）
 2. `%DSH_DESKTOP_NODE_EXECUTABLE%`（DSH 给子进程设置的环境变量）
 3. 注册表卸载项里 DeepSeek Harness 的 `InstallLocation`
 4. `%LOCALAPPDATA%\Programs\DeepSeek Harness`、`%ProgramFiles%\DeepSeek Harness` 等常见目录
@@ -142,8 +143,11 @@ Windows Desktop 的宿主端口是系统随机分配的，界面里看不到。`
 
 ```bat
 verify.cmd --port 62608
-verify.cmd --home D:\dsh-home
+verify.cmd --home D:\dsh-home --port 62608
 ```
+
+传了 `--home` / `DSH_HOME` 时不会自动借用别的 home 的宿主，live 检查必须显式给
+`--port`；否则只做静态检查并明确标注 `skip`。
 
 期望结尾是 `PLUGIN OK`。
 

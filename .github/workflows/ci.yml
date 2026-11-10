@@ -61,8 +61,8 @@ jobs:
             throw 'install.cmd did not project lib/client.js into the profile'
           }
           $item = Get-Item -LiteralPath $link -Force
-          if (-not $item.Attributes.HasFlag([IO.FileAttributes]::ReparsePoint)) {
-            throw 'install.cmd did not create a junction/reparse point'
+          if ($item.LinkType -ne 'Junction') {
+            throw "expected a junction, got '$($item.LinkType)'"
           }
           & .\uninstall.cmd --home "$mecHome" --profile desktop
           if ($LASTEXITCODE -ne 0) { throw "uninstall.cmd failed with exit code $LASTEXITCODE" }
@@ -96,7 +96,7 @@ jobs:
             if (-not (Test-Path -LiteralPath (Join-Path $link 'lib\client.js'))) {
               throw 'fallback install did not project lib/client.js'
             }
-            if (-not (Get-Item -LiteralPath $link -Force).Attributes.HasFlag([IO.FileAttributes]::ReparsePoint)) {
+            if ((Get-Item -LiteralPath $link -Force).LinkType -ne 'Junction') {
               throw 'fallback install did not create a junction'
             }
             & .\uninstall.cmd --home "$mecHome" --profile desktop

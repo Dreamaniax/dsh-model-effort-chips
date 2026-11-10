@@ -19,9 +19,11 @@ import {
   rmSync,
   writeFileSync,
 } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { homedir, tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+
+import { resolveDshHome } from '../scripts/lib/profile.mjs'
 
 const PKG = 'dsh-model-effort-chips'
 const here = resolve(dirname(fileURLToPath(import.meta.url)), '..')
@@ -125,6 +127,32 @@ try {
   )
   check(!existsSync(join(home, 'profiles', 'desktop', 'node_modules', PKG)), 'dry run creates no link')
 
+  // --- home resolution ------------------------------------------------------
+  const defaultHome = resolve(join(homedir(), '.dsh'))
+  check(samePath(resolveDshHome(''), defaultHome), 'blank --home falls back to ~/.dsh')
+  check(samePath(resolveDshHome('   '), defaultHome), 'whitespace --home falls back to ~/.dsh')
+  check(samePath(resolveDshHome('~/dsh-home'), join(homedir(), 'dsh-home')), 'a leading ~ is expanded')
+
+  // --- failure paths do not dirty the profile -------------------------------
+  const blockedHome = join(base, 'blocked home')
+  fixture(blockedHome)
+  writeFileSync(join(blockedHome, 'profiles', 'desktop', 'node_modules'), 'not a directory', 'utf8')
+  const blocked = run('install.mjs', ['--home', blockedHome])
+  check(blocked.status === 1, 'a failed projection exits 1', `status ${blocked.status}`)
+  const blockedManifest = manifest(blockedHome)
+  check(blockedManifest.dependencies?.[PKG] === undefined, 'a failed projection leaves the dependency out')
+  check(
+    !(blockedManifest.dsh?.profile?.bundles ?? []).includes(PKG),
+    'a failed projection leaves the bundle list untouched',
+  )
+
+  const badJsonHome = join(base, 'bad json home')
+  mkdirSync(join(badJsonHome, 'profiles', 'desktop'), { recursive: true })
+  writeFileSync(join(badJsonHome, 'profiles', 'desktop', 'package.json'), '{"name":', 'utf8')
+  const badJson = run('install.mjs', ['--home', badJsonHome])
+  check(badJson.status === 1, 'invalid profile JSON exits 1')
+  check(/not valid JSON/iu.test(`${badJson.stdout}${badJson.stderr}`), 'invalid profile JSON gets a readable error')
+
   // --- install -------------------------------------------------------------
   const installed = run('install.mjs', ['--home', home, '--profile', 'desktop'])
   check(installed.status === 0, 'install exits 0', installed.stderr.trim())
@@ -163,6 +191,10 @@ try {
   const verified = run('verify.mjs', ['--home', home, '--profile', 'desktop'])
   check(verified.status === 0, 'verify exits 0 for a linked install', `${verified.stdout}\n${verified.stderr}`.trim())
   check(verified.stdout.includes('PLUGIN OK'), 'verify reports PLUGIN OK')
+  check(
+    verified.stdout.includes('non-default home'),
+    'verify does not borrow another home\'s live host',
+  )
 
   // --- another profile ------------------------------------------------------
   fixture(home, ['web'])

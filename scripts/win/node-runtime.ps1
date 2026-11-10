@@ -42,7 +42,21 @@ function Get-MecNodeRuntime {
             }
         }
         if (-not [string]::IsNullOrWhiteSpace($file) -and (Test-Path -LiteralPath $file -PathType Leaf)) {
-            return @{ Kind = 'node'; File = $file; Prefix = @(); Env = @{} }
+            # The scripts need Node >= 20 (global fetch, ESM top-level await).
+            # A stale Node or a Microsoft Store execution-alias stub falls
+            # through to Desktop's Electron runtime instead of failing later.
+            $version = ''
+            try {
+                $version = [string](& $file --version 2>$null | Select-Object -First 1)
+            } catch {
+                $version = ''
+            }
+            if ($version -match '^v(\d+)\.') {
+                $major = [int]$Matches[1]
+                if ($major -ge 20) {
+                    return @{ Kind = 'node'; File = $file; Prefix = @(); Env = @{} }
+                }
+            }
         }
     }
 
@@ -110,13 +124,14 @@ function Get-MecNodeRuntime {
 function Invoke-MecNodeScript {
     param(
         [Parameter(Mandatory = $true)][string]$ScriptPath,
-        [string[]]$ScriptArgs = @()
+        [string[]]$ScriptArgs = @(),
+        [ValidateSet('install', 'uninstall', 'verify')][string]$Action = 'install'
     )
 
     $runtime = Get-MecNodeRuntime
     if ($null -eq $runtime) {
         Write-Host ''
-        Write-Host '[install] FAILED: could not find Node.js or a DeepSeek Harness Desktop installation.' -ForegroundColor Red
+        Write-Host "[$Action] FAILED: could not find Node.js or a DeepSeek Harness Desktop installation." -ForegroundColor Red
         Write-Host '  Fix one of these:' -ForegroundColor Yellow
         Write-Host '    1. Open DeepSeek Harness Desktop once and install its command:'
         Write-Host '       application menu -> Manage dsh Command... -> Install.'

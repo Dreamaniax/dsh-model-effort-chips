@@ -67,7 +67,12 @@ async function main() {
   if (!existsSync(manifestPath)) fail(`profile manifest not found: ${manifestPath}`)
 
   const before = readFileSync(manifestPath, 'utf8')
-  const manifest = JSON.parse(before)
+  let manifest
+  try {
+    manifest = JSON.parse(before)
+  } catch (error) {
+    fail(`profile package.json is not valid JSON: ${manifestPath}\n  ${error?.message ?? error}`)
+  }
   const hadDependency = Object.hasOwn(manifest.dependencies ?? {}, PKG)
   delete manifest.dependencies?.[PKG]
   if (Array.isArray(manifest.dsh?.profile?.bundles)) {
@@ -93,8 +98,14 @@ async function main() {
   }
 
   try {
-    const removed = removeProjection(linkPath)
-    console.log(`[uninstall] node_modules: ${removed ? 'projection removed' : 'nothing to remove'} (${kind})`)
+    const removal = removeProjection(linkPath)
+    if (removal.outcome === 'missing') {
+      console.log(`[uninstall] node_modules: nothing to remove (${kind})`)
+    } else if (removal.outcome === 'moved') {
+      console.log(`[uninstall] node_modules: moved aside to ${removal.backup}`)
+    } else {
+      console.log(`[uninstall] node_modules: projection removed (${kind})`)
+    }
   } catch (error) {
     fail(
       `could not remove ${linkPath}: ${error?.message ?? error}\n` +
