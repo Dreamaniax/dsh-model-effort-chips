@@ -78,20 +78,6 @@ function recordingContext() {
   return { context, calls, props }
 }
 
-/** Was smoothing off at the moment of the first blit, and back on after? */
-function smoothingAroundBlit(calls) {
-  let before = null
-  let after = null
-  for (const call of calls) {
-    if (call[0] === 'drawImage' && before === null) before = calls.smoothingAtBlit ?? null
-    if (call[0] === 'set' && call[1] === 'imageSmoothingEnabled') {
-      if (before === null && !calls.some((c) => c[0] === 'drawImage')) before = call[2]
-      else after = call[2]
-    }
-  }
-  return { before, after }
-}
-
 const LIVES = [
   ['jellyfish.js', 'jellyfishEffect', 'jellyfish'],
   ['vine.js', 'vineEffect', 'vine'],
