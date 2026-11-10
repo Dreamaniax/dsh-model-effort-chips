@@ -58,18 +58,38 @@ function frameFor(effect, energy, art, width = 284) {
 
 function recordingContext() {
   const calls = []
+  const props = {}
   const context = new Proxy(
     {},
     {
       get(_target, prop) {
         if (typeof prop !== 'string') return undefined
         if (prop.startsWith('create')) return () => ({ addColorStop() {} })
+        if (Object.prototype.hasOwnProperty.call(props, prop)) return props[prop]
         return (...args) => calls.push([prop, ...args])
       },
-      set: () => true,
+      set(_target, prop, value) {
+        props[prop] = value
+        calls.push(['set', prop, value])
+        return true
+      },
     },
   )
-  return { context, calls }
+  return { context, calls, props }
+}
+
+/** Was smoothing off at the moment of the first blit, and back on after? */
+function smoothingAroundBlit(calls) {
+  let before = null
+  let after = null
+  for (const call of calls) {
+    if (call[0] === 'drawImage' && before === null) before = calls.smoothingAtBlit ?? null
+    if (call[0] === 'set' && call[1] === 'imageSmoothingEnabled') {
+      if (before === null && !calls.some((c) => c[0] === 'drawImage')) before = call[2]
+      else after = call[2]
+    }
+  }
+  return { before, after }
 }
 
 const LIVES = [
@@ -108,6 +128,18 @@ for (const [file, name, id] of LIVES) {
       effect.paint(context, local, frame)
       const draws = calls.filter(([op]) => op === 'drawImage')
       check(draws.length === 1, `${id} e=${energy}: one blit per frame (got ${draws.length})`)
+      // Pixel art must blit with smoothing off, then restore it.
+      const blitIndex = calls.findIndex(([op]) => op === 'drawImage')
+      const before = calls.slice(0, blitIndex)
+      const after = calls.slice(blitIndex + 1)
+      check(
+        before.some(([op, prop, value]) => op === 'set' && prop === 'imageSmoothingEnabled' && value === false),
+        `${id}: smoothing is off before the blit`,
+      )
+      check(
+        after.some(([op, prop, value]) => op === 'set' && prop === 'imageSmoothingEnabled' && value === true),
+        `${id}: smoothing is restored after the blit`,
+      )
       const draw = draws[0]
       if (!draw) continue
       const [, image, sx, sy, sw, sh, dx, dy, dw, dh] = draw
