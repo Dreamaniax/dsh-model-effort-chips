@@ -156,7 +156,7 @@ await act(async () => {
   physics.dispatchEvent(new window.MouseEvent('click', { bubbles: true }))
   await sleep(20)
 })
-check(options().length === 4, '物理仿真 holds the four physics effects')
+check(options().length === 5, '物理仿真 holds the five physics effects')
 check(window.document.querySelector('[data-effect-back]') !== null, 'a back row returns to the categories')
 
 // back to the categories
@@ -166,14 +166,14 @@ await act(async () => {
 })
 check(options().length === 0 && categories().length >= 2, 'the back row restores the category list')
 
-// choose from 经典
-const classic = categories().find((row) => row.dataset.effectCategory === 'classic')
+// choose the ball pit from 物理仿真
+const physicsAgain = categories().find((row) => row.dataset.effectCategory === 'physics')
 await act(async () => {
-  classic.dispatchEvent(new window.MouseEvent('click', { bubbles: true }))
+  physicsAgain.dispatchEvent(new window.MouseEvent('click', { bubbles: true }))
   await sleep(20)
 })
 const particle = options().find((row) => row.dataset.effectOption === 'particle-wave')
-check(particle !== undefined, 'the particle effect is offered under 经典')
+check(particle !== undefined, 'the ball pit is offered under 物理仿真')
 await act(async () => {
   particle.dispatchEvent(new window.MouseEvent('pointerdown', { bubbles: true }))
   particle.dispatchEvent(new window.MouseEvent('click', { bubbles: true }))
