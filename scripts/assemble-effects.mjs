@@ -48,9 +48,6 @@ const EFFECTS = [
   { file: 'seven-segment.js', name: 'sevenSegmentEffect' },
   { file: 'segments.js', name: 'segmentsEffect' },
   { file: 'gauge.js', name: 'gaugeEffect' },
-  { file: 'contour.js', name: 'contourEffect' },
-  { file: 'radar.js', name: 'radarEffect' },
-  { file: 'dot-matrix.js', name: 'dotMatrixEffect' },
   // ---- 生命 / 角色 ----
   { file: 'jellyfish.js', name: 'jellyfishEffect' },
   { file: 'vine.js', name: 'vineEffect' },
