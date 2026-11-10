@@ -132,7 +132,7 @@ await act(async () => {
 
 const switcher = window.document.querySelector('[data-dsh-mec="effect-switch"]')
 check(switcher !== null, 'the effect switcher is rendered in the panel')
-check(switcher.getAttribute('aria-haspopup') === 'listbox', 'the switcher advertises a listbox')
+check(switcher.getAttribute('aria-haspopup') === 'listbox', 'the switcher advertises a popup')
 check(switcher.getAttribute('aria-expanded') === 'false', 'the menu starts closed')
 
 const options = () => [...window.document.querySelectorAll('[data-effect-option]')]
