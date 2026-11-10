@@ -278,7 +278,7 @@ const state = effect.createState()
 const dt = 1 / 30
 // warm up so the creature is somewhere visible
 for (let frame = 0; frame < 12; frame += 1) {
-  effect.step(state, { energy, totalLevels: 4, width: WIDTH, height: HEIGHT, dt, band, trackY, sky })
+  effect.step(state, { energy, totalLevels: 4, width: WIDTH, height: HEIGHT, dt, band, trackY, sky, artBox: { top: 0, height: sky } })
 }
 // The track is the standard DOM bar now; draw it so the still matches the panel.
 if (layout.track !== 'wave') {
@@ -309,6 +309,7 @@ effect.paint(context, state, {
   height: HEIGHT,
   band,
   trackY,
+  artBox: { top: 0, height: sky },
   sky,
 })
 
