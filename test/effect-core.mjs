@@ -101,6 +101,7 @@ for (const energy of [0, 0.25, 0.5, 0.75, 1]) {
   check(bad === 0, `e=${energy}: no NaN reaches the context`)
   if (energy <= 0.5) check(bladeDraws.length === 0, `e=${energy}: no blades below 0.55`)
   if (energy === 1) check(bladeDraws.length === 1, `e=1: one blade flare`)
+  check(calls.some(([op]) => op === 'clip'), `e=${energy}: clips to its box before rotating`)
   for (const call of draws) {
     check(call[2] % 48 === 0 && call[2] < 864, `e=${energy}: source rect is a real frame (${call[2]})`)
     check(Number.isInteger(call[6]) && Number.isInteger(call[7]) && Number.isInteger(call[8]), `e=${energy}: whole-pixel destination`)
