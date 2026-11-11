@@ -45,6 +45,8 @@ const EFFECTS = [
   { file: 'sandstorm.js', name: 'sandstormEffect' },
   { file: 'fireflies.js', name: 'firefliesEffect' },
   // ---- 伪 3D / 视差 ----
+  // ---- 能量核心 ----
+  { file: 'concentric-core.js', name: 'concentricCoreEffect' },
   // ---- 交互反馈 ----
   { file: 'ripple.js', name: 'rippleEffect' },
   { file: 'burst.js', name: 'burstEffect' },
