@@ -77,7 +77,7 @@ function paint(state, frame) {
 }
 
 check(effect.id === 'concentric-core', 'id is the neutral catalogue name')
-check(effect.category === 'core', 'category is core')
+check(effect.category === 'hero', 'category is 超级英雄')
 const box = (effect.layout.sky ?? 0) + (effect.layout.band ?? 0)
 
 // 1. the level walks both ladders
