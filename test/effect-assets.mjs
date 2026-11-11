@@ -44,7 +44,7 @@ function readMap(name) {
 
 const LIFE = readSet('LIFE_ART_IDS')
 const TEXTURE = readSet('TEXTURE_ART_IDS')
-const FEEDBACK = readSet('FEEDBACK_ART_IDS')
+const FEEDBACK = readMap('FEEDBACK_ART')
 const CORE = readMap('CORE_ART')
 
 check(LIFE.size > 0 && TEXTURE.size > 0 && FEEDBACK.size > 0 && CORE.size > 0, 'client.js still exposes every art family')
@@ -52,9 +52,44 @@ check(LIFE.size > 0 && TEXTURE.size > 0 && FEEDBACK.size > 0 && CORE.size > 0, '
 const families = [
   ...([...LIFE].map((id) => [id, 'life', id])),
   ...([...TEXTURE].map((id) => [id, 'texture', id])),
-  ...([...FEEDBACK].map((id) => [id, 'feedback', id])),
+  ...([...FEEDBACK].map(([id, asset]) => [id, 'feedback', asset])),
   ...([...CORE].map(([id, asset]) => [id, 'core', asset])),
 ]
+
+// Boot the bundle the way the host does and take the real effect ids: a family
+// entry that names no effect is dead weight, and an effect that is missing from
+// its family silently draws vectors instead of art.
+const reactStub = {
+  createElement: () => ({}),
+  Component: class {},
+  useState: (value) => [value, () => {}],
+  useEffect() {},
+  useRef: (value) => ({ current: value ?? null }),
+  useCallback: (fn) => fn,
+  useMemo: (fn) => fn(),
+  useSyncExternalStore: (_subscribe, snapshot) => snapshot(),
+}
+let exportsObject = null
+const sandbox = {
+  localStorage: undefined,
+  __ModuleLoader__: {
+    load: ({ factory }) => {
+      exportsObject = factory((id) => (id === 'react' ? reactStub : { createPortal: (node) => node }))
+    },
+  },
+}
+new Function('window', 'console', 'setInterval', 'clearInterval', source)(
+  sandbox,
+  console,
+  setInterval,
+  clearInterval,
+)
+const effectIds = new Set(exportsObject.__internals.EFFECTS.map((effect) => effect.id))
+check(effectIds.size > 0, 'the bundle exposes its effect ids')
+
+for (const [id] of families) {
+  check(effectIds.has(id), `${id}: names a real effect`)
+}
 
 for (const [id, folder, asset] of families) {
   const file = resolve(ROOT, 'lib/assets', folder, `${asset}.png`)
@@ -67,7 +102,7 @@ for (const folder of ['life', 'texture', 'feedback', 'core']) {
   const dir = resolve(ROOT, 'lib/assets', folder)
   if (!existsSync(dir)) continue
   for (const name of readdirSync(dir).filter((file) => file.endsWith('.png'))) {
-    check(used.has(`${folder}/${name.replace('.png', '')}`), `${folder}/${name} is reachable from an effect id`)
+    check(used.has(`${folder}/${name.replace('.png', '')}`), `${folder}/${name} is reachable from a real effect id`)
   }
 }
 
