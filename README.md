@@ -8,6 +8,13 @@
 
 > 平台：macOS 与 Windows x64 的 DSH Desktop，要求 DSH `>= 0.2.2-rc.1`。纯浏览器端 ESM，无编译、无原生依赖；安装器在 ubuntu / macOS / Windows 三平台 CI 上跑往返测试。
 
+
+## 图标
+
+`icon.svg` 是 40×40 像素网格的矢量像素图（141 个 `<rect>`，`shape-rendering="crispEdges"`），
+64px 与 32px 下仍可辨认。四个候选（滑条加柱 / 双胶囊 / 仪表盘 / 火花加分段条）都在
+`docs/icon-candidates/`，选中「火花 + 分段条」后由 PNG 转录成 SVG。
+
 ## 效果预览
 
 ![动效演示：粒子波动特效](docs/demo.gif)
